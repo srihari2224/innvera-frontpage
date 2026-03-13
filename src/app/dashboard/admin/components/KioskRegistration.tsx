@@ -505,7 +505,7 @@ function CapacityInput({ label, value, onChange }: { label: string; value: strin
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const wrap: React.CSSProperties = {
-  minHeight: "100vh",
+  minHeight: "60vh",
   background: "var(--page-bg)",
   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
   padding: "48px 20px",
