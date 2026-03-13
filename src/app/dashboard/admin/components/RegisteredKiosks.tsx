@@ -1,21 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, LineChart, Line, Dot
 } from "recharts"
 import { generateInvoicePDF } from "@/utils/generateInvoicePDF"
 import { QRCodeSVG } from "qrcode.react"
 
 const KIOSK_BACKEND = "https://kiosk-backend-t1mi.onrender.com"
 const FILE_UPLOADER_API = "https://printing-pixel-1.onrender.com"
+
+// ── Color tokens ──────────────────────────────────────────────────────────────
+const C = {
+  orange: "#ff6b47",
+  orangeDim: "rgba(255,107,71,0.12)",
+  green: "#22c55e",
+  greenDim: "rgba(34,197,94,0.12)",
+  blue: "#3b82f6",
+  blueDim: "rgba(59,130,246,0.12)",
+  red: "#ef4444",
+  redDim: "rgba(239,68,68,0.12)",
+}
 
 interface Kiosk {
   kioskId: string
@@ -30,39 +37,147 @@ interface Kiosk {
   geo?: { lat: number; lng: number }
   status: string
   createdAt?: string
-  bankDetails?: {
-    accountName: string
-    accountNumber: string
-    ifscCode: string
-    bankName: string
-  }
+  bankDetails?: { accountName: string; accountNumber: string; ifscCode: string; bankName: string }
   settlements?: {
-    _id: string
-    amount: number
-    transactionId: string
-    proofImage?: string
-    fromDate: string
-    toDate: string
-    status: string
-    createdAt: string
+    _id: string; amount: number; transactionId: string; proofImage?: string
+    fromDate: string; toDate: string; status: string; createdAt: string
   }[]
 }
 
+// ── Styled Input Component ─────────────────────────────────────────────────────
+function StyledInput({
+  label, value, onChange, type = "text", placeholder = "", hint, icon, readOnly,
+}: {
+  label: string; value: string; onChange?: (v: string) => void
+  type?: string; placeholder?: string; hint?: string; icon?: React.ReactNode; readOnly?: boolean
+}) {
+  const [focused, setFocused] = useState(false)
+  const isDark = typeof window !== "undefined" ? localStorage.getItem("pp-theme") !== "light" : true
+  const ref = useRef<HTMLInputElement>(null)
+
+  return (
+    <div
+      onClick={() => !readOnly && ref.current?.focus()}
+      style={{
+        position: "relative",
+        background: focused ? C.orangeDim : isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)",
+        border: `1px solid ${focused ? C.orange : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)"}`,
+        padding: "14px 16px 12px",
+        cursor: readOnly ? "default" : "text",
+        transition: "border-color 0.2s, background 0.2s",
+      }}
+    >
+      {/* Top accent line on focus */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 2,
+        background: C.orange, transform: focused ? "scaleX(1)" : "scaleX(0)",
+        transformOrigin: "left", transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+      }} />
+
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        {icon && (
+          <div style={{ color: focused ? C.orange : isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.3)", marginTop: 18, flexShrink: 0, transition: "color 0.2s" }}>
+            {icon}
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <label style={{
+            display: "block", fontFamily: "'Space Mono', monospace",
+            fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase",
+            letterSpacing: "0.22em",
+            color: focused ? C.orange : isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)",
+            marginBottom: 7, transition: "color 0.2s", pointerEvents: "none",
+          }}>
+            {label}
+          </label>
+          <input
+            ref={ref}
+            type={type}
+            value={value}
+            onChange={e => onChange?.(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            readOnly={readOnly}
+            placeholder={placeholder}
+            autoComplete={type === "password" ? "new-password" : "off"}
+            style={{
+              width: "100%", background: "transparent", border: "none", outline: "none",
+              fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600,
+              color: isDark ? "#ffffff" : "#0a0a0a",
+              caretColor: C.orange, letterSpacing: "-0.01em", display: "block",
+            }}
+          />
+          {hint && (
+            <p style={{
+              fontFamily: "'Space Mono', monospace", fontSize: "0.44rem",
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              color: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.28)", marginTop: 5,
+            }}>
+              {hint}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Section Header ─────────────────────────────────────────────────────────────
+function SectionHeader({ label, children, color = C.orange }: { label: string; children?: React.ReactNode; color?: string }) {
+  const isDark = typeof window !== "undefined" ? localStorage.getItem("pp-theme") !== "light" : true
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      marginBottom: 14, paddingBottom: 10,
+      borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ width: 3, height: 14, background: color, flexShrink: 0 }} />
+        <span style={{
+          fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700,
+          textTransform: "uppercase", letterSpacing: "0.25em",
+          color: isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)",
+        }}>{label}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// ── Status Badge ───────────────────────────────────────────────────────────────
+function StatusBadge({ status }: { status: string }) {
+  const cfg: Record<string, { color: string; bg: string; dot: string }> = {
+    ACTIVE: { color: C.green, bg: C.greenDim, dot: C.green },
+    PENDING: { color: C.orange, bg: C.orangeDim, dot: C.orange },
+    DELETE_PENDING: { color: C.red, bg: C.redDim, dot: C.red },
+    APPROVED: { color: C.green, bg: C.greenDim, dot: C.green },
+    REJECTED: { color: C.red, bg: C.redDim, dot: C.red },
+  }
+  const s = cfg[status] || { color: "#4a4a4a", bg: "transparent", dot: "#4a4a4a" }
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "3px 8px", background: s.bg, border: `1px solid ${s.color}20`,
+      fontFamily: "'Space Mono', monospace", fontSize: "0.5rem",
+      fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: s.color,
+    }}>
+      <span style={{ width: 5, height: 5, background: s.dot, borderRadius: "50%" }} />
+      {status}
+    </span>
+  )
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function RegisteredKiosks() {
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [selected, setSelected] = useState<Kiosk | null>(null)
   const [dlLoading, setDlLoading] = useState<string | null>(null)
-  
-  const [kioskToDelete, setKioskToDelete] = useState<Kiosk | null>(null)
   const [deleteInput, setDeleteInput] = useState("")
-
   const [editingBank, setEditingBank] = useState(false)
   const [bankForm, setBankForm] = useState({ accountName: "", accountNumber: "", ifscCode: "", bankName: "" })
   const [bankSaving, setBankSaving] = useState(false)
-
-  // QR / Certificate / Delete / Invoice states
   const [qrCopied, setQrCopied] = useState(false)
   const [viewCert, setViewCert] = useState(false)
   const [certBlobUrl, setCertBlobUrl] = useState<string | null>(null)
@@ -70,74 +185,56 @@ export default function RegisteredKiosks() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [invoicePdfUrl, setInvoicePdfUrl] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const isDark = typeof window !== "undefined" ? localStorage.getItem("pp-theme") !== "light" : true
-  const borderMuted = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)"
-  const borderStrong = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.2)"
-  const surfaceBg = isDark ? "#050505" : "#ffffff"
-  const labelColor = isDark ? "#4a4a4a" : "#6b7280"
-  const textColor = isDark ? "#ffffff" : "#111111"
-  const subBg = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"
-
-  // Settlement States
   const [showSettlementForm, setShowSettlementForm] = useState(false)
-  const [settlementForm, setSettlementForm] = useState({
-    amount: "",
-    transactionId: "",
-    fromDate: "",
-    toDate: "",
-    proofImage: "" // base64
-  })
+  const [settlementForm, setSettlementForm] = useState({ amount: "", transactionId: "", fromDate: "", toDate: "", proofImage: "" })
   const [settlementSaving, setSettlementSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<"info" | "analytics">("info")
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
+
+  const isDark = typeof window !== "undefined" ? localStorage.getItem("pp-theme") !== "light" : true
+  const bm = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"
+  const bs = isDark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.15)"
+  const surf = isDark ? "#070707" : "#ffffff"
+  const lc = isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)"
+  const tc = isDark ? "#ffffff" : "#0a0a0a"
+  const sub = isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"
 
   useEffect(() => {
     if (selected) {
       setBankForm(selected.bankDetails || { accountName: "", accountNumber: "", ifscCode: "", bankName: "" })
-      setEditingBank(false)
-      setViewCert(false)
-      setCertBlobUrl(null)
+      setEditingBank(false); setViewCert(false); setCertBlobUrl(null)
       setShowSettlementForm(false)
       setSettlementForm({ amount: "", transactionId: "", fromDate: "", toDate: "", proofImage: "" })
+      setActiveTab("info")
     }
   }, [selected])
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = (event) => {
-      setSettlementForm(prev => ({ ...prev, proofImage: event.target?.result as string }))
-    }
+    reader.onload = (ev) => setSettlementForm(p => ({ ...p, proofImage: ev.target?.result as string }))
     reader.readAsDataURL(file)
   }
 
   const handleSaveSettlement = async () => {
     if (!selected) return
     if (!settlementForm.amount || !settlementForm.transactionId || !settlementForm.fromDate || !settlementForm.toDate) {
-      alert("Please fill all required settlement fields.")
-      return
+      alert("Please fill all required settlement fields."); return
     }
     setSettlementSaving(true)
     try {
       const res = await fetch(`${KIOSK_BACKEND}/api/kiosk/${selected.kioskId}/settlement`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settlementForm)
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settlementForm)
       })
       const data = await res.json()
       if (data.success) {
-        setSelected(prev => prev ? { ...prev, settlements: data.settlements } : prev)
-        setKiosks(prev => prev.map(k => k.kioskId === selected.kioskId ? { ...k, settlements: data.settlements } : k))
+        setSelected(p => p ? { ...p, settlements: data.settlements } : p)
+        setKiosks(p => p.map(k => k.kioskId === selected.kioskId ? { ...k, settlements: data.settlements } : k))
         setShowSettlementForm(false)
         setSettlementForm({ amount: "", transactionId: "", fromDate: "", toDate: "", proofImage: "" })
         alert("Settlement added and sent for approval!")
-      } else {
-        alert("Failed to add settlement: " + data.error)
-      }
-    } catch {
-      alert("Network error saving settlement")
-    } finally {
-      setSettlementSaving(false)
-    }
+      } else { alert("Failed: " + data.error) }
+    } catch { alert("Network error") } finally { setSettlementSaving(false) }
   }
 
   const handleSaveBank = async () => {
@@ -145,32 +242,20 @@ export default function RegisteredKiosks() {
     setBankSaving(true)
     try {
       const res = await fetch(`${KIOSK_BACKEND}/api/kiosk/${selected.kioskId}/bank`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bankDetails: bankForm })
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bankDetails: bankForm })
       })
       const data = await res.json()
       if (data.success) {
-        setSelected(prev => prev ? { ...prev, bankDetails: bankForm } : prev)
-        setKiosks(prev => prev.map(k => k.kioskId === selected.kioskId ? { ...k, bankDetails: bankForm } : k))
+        setSelected(p => p ? { ...p, bankDetails: bankForm } : p)
+        setKiosks(p => p.map(k => k.kioskId === selected.kioskId ? { ...k, bankDetails: bankForm } : k))
         setEditingBank(false)
-      } else {
-        alert("Failed to save: " + data.error)
-      }
-    } catch {
-      alert("Network error saving bank details")
-    } finally {
-      setBankSaving(false)
-    }
+      } else { alert("Failed: " + data.error) }
+    } catch { alert("Network error") } finally { setBankSaving(false) }
   }
 
   useEffect(() => {
     fetch(`${KIOSK_BACKEND}/api/kiosk/list`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) setKiosks(d.kiosks)
-        else setError("Failed to load kiosks")
-      })
+      .then(r => r.json()).then(d => { if (d.success) setKiosks(d.kiosks); else setError("Failed to load kiosks") })
       .catch(() => setError("Network error — cannot reach kiosk backend"))
       .finally(() => setLoading(false))
   }, [])
@@ -182,100 +267,114 @@ export default function RegisteredKiosks() {
       if (!res.ok) throw new Error("Failed")
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `innvera-kiosk-${kioskId}.pdf`
-      a.click()
+      const a = document.createElement("a"); a.href = url; a.download = `innvera-kiosk-${kioskId}.pdf`; a.click()
       URL.revokeObjectURL(url)
-    } catch {
-      alert("Certificate download failed")
-    } finally {
-      setDlLoading(null)
-    }
+    } catch { alert("Certificate download failed") } finally { setDlLoading(null) }
   }
 
-  const statusColor = (s: string) =>
-    s === "ACTIVE" ? "#22c55e" : s === "PENDING" ? "#ff6b47" : s === "DELETE_PENDING" ? "#ef4444" : "#4a4a4a"
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 240, gap: 12 }}>
+      <div style={{ width: 6, height: 6, background: C.orange, animation: "blink 1.2s ease-in-out infinite" }} />
+      <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.3em", color: lc }}>Loading kiosks...</span>
+      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}`}</style>
+    </div>
+  )
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-[0.7rem] uppercase tracking-[0.3em]" style={{ color: "#4a4a4a" }}>
-          Loading kiosks...
-        </p>
-      </div>
-    )
-  }
+  if (error) return (
+    <div style={{ padding: "16px 20px", borderLeft: `3px solid ${C.orange}`, background: C.orangeDim }}>
+      <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.65rem", color: C.orange }}>{error}</span>
+    </div>
+  )
 
-  if (error) {
-    return (
-      <div className="p-6 border-l-4" style={{ background: "#0a0a0a", borderColor: "#ff6b47" }}>
-        <p className="text-[0.75rem]" style={{ color: "#ff6b47" }}>{error}</p>
-      </div>
-    )
-  }
+  // Stats summary
+  const activeCount = kiosks.filter(k => k.status === "ACTIVE").length
+  const pendingCount = kiosks.filter(k => k.status === "PENDING").length
 
   return (
-    <div>
-      {/* Count badge */}
-      <div className="flex items-baseline gap-3 mb-8">
-        <span className="text-[3rem] font-black leading-none">{kiosks.length}</span>
-        <span className="text-[0.65rem] uppercase tracking-[0.2em]" style={{ color: "#a3a3a3" }}>
-          Registered Kiosks
-        </span>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <style>{rk_styles}</style>
+
+      {/* ── Header stats ── */}
+      <div style={{ display: "flex", alignItems: "stretch", gap: 0, marginBottom: 28, border: `1px solid ${bm}` }}>
+        {[
+          { num: kiosks.length, label: "Total Kiosks", color: tc, border: true },
+          { num: activeCount, label: "Active", color: C.green, border: true },
+          { num: pendingCount, label: "Pending", color: C.orange, border: false },
+        ].map((s, i) => (
+          <div key={s.label} style={{
+            flex: 1, padding: "20px 24px",
+            borderRight: s.border ? `1px solid ${bm}` : "none",
+            background: i === 0 ? sub : "transparent",
+          }}>
+            <div style={{ fontSize: "2.4rem", fontWeight: 900, lineHeight: 1, color: s.color, letterSpacing: "-0.03em" }}>{s.num}</div>
+            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", color: lc, marginTop: 4 }}>{s.label}</div>
+          </div>
+        ))}
       </div>
 
+      {/* ── Table ── */}
       {kiosks.length === 0 ? (
-        <p className="text-[0.8rem]" style={{ color: "#4a4a4a" }}>No kiosks registered yet.</p>
+        <div style={{ padding: "48px", textAlign: "center", border: `1px solid ${bm}` }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={lc} strokeWidth="1.5" style={{ marginBottom: 12 }}>
+            <rect x="3" y="3" width="18" height="18" rx="0" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="3" />
+          </svg>
+          <p style={{ color: lc, fontSize: "0.75rem", fontFamily: "'Space Mono',monospace", textTransform: "uppercase", letterSpacing: "0.2em" }}>No kiosks registered yet</p>
+        </div>
       ) : (
-        <div className="border" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+        <div style={{ border: `1px solid ${bm}` }}>
           {/* Table header */}
-          <div
-            className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 border-b text-[0.55rem] uppercase tracking-[0.2em]"
-            style={{ borderColor: "rgba(255,255,255,0.08)", color: "#4a4a4a" }}
-          >
-            <span>Kiosk ID</span>
-            <span>Type</span>
-            <span>Service</span>
-            <span>Owner</span>
-            <span>Status</span>
-            <span>Actions</span>
+          <div style={{
+            display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.2fr 1.2fr 80px",
+            padding: "10px 16px", borderBottom: `1px solid ${bm}`,
+            background: sub,
+          }}>
+            {["Kiosk ID", "Type", "Service", "Owner", "Status", "Actions"].map(h => (
+              <span key={h} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: lc }}>{h}</span>
+            ))}
           </div>
 
           {/* Rows */}
-          {kiosks.map((kiosk) => (
+          {kiosks.map((k) => (
             <div
-              key={kiosk.kioskId}
-              className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-4 border-b hover:bg-white hover:bg-opacity-[0.02] transition-colors items-center cursor-pointer"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
-              onClick={() => setSelected(kiosk)}
+              key={k.kioskId}
+              className="rk-row"
+              style={{
+                display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.2fr 1.2fr 80px",
+                padding: "14px 16px", borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)"}`,
+                alignItems: "center", cursor: "pointer",
+                background: hoveredRow === k.kioskId ? (isDark ? "rgba(255,107,71,0.04)" : "rgba(255,107,71,0.03)") : "transparent",
+                transition: "background 0.18s",
+              }}
+              onMouseEnter={() => setHoveredRow(k.kioskId)}
+              onMouseLeave={() => setHoveredRow(null)}
+              onClick={() => setSelected(k)}
             >
-              <span className="text-[0.85rem] font-bold uppercase" style={{ letterSpacing: "-0.01em" }}>
-                {kiosk.kioskId}
-              </span>
-              <span className="text-[0.75rem]" style={{ color: "#a3a3a3" }}>
-                {kiosk.kioskType || "—"}
-              </span>
-              <span className="text-[0.75rem]" style={{ color: "#a3a3a3" }}>
-                {kiosk.serviceType || "—"}
-              </span>
-              <span className="text-[0.75rem]" style={{ color: "#a3a3a3" }}>
-                {kiosk.ownerName || "—"}
-              </span>
-              <span
-                className="text-[0.6rem] font-bold uppercase tracking-[0.1em]"
-                style={{ color: statusColor(kiosk.status) }}
-              >
-                {kiosk.status}
-              </span>
-              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 7, height: 7, flexShrink: 0,
+                  background: k.status === "ACTIVE" ? C.green : k.status === "PENDING" ? C.orange : C.red,
+                  boxShadow: `0 0 6px ${k.status === "ACTIVE" ? C.green : k.status === "PENDING" ? C.orange : C.red}60`,
+                }} />
+                <span style={{ fontSize: "0.82rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "-0.01em", color: tc }}>{k.kioskId}</span>
+              </div>
+              <span style={{ fontSize: "0.72rem", color: lc }}>{k.kioskType || "—"}</span>
+              <span style={{ fontSize: "0.72rem", color: lc }}>{k.serviceType || "—"}</span>
+              <span style={{ fontSize: "0.72rem", color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }}>{k.ownerName || "—"}</span>
+              <StatusBadge status={k.status} />
+              <div onClick={e => e.stopPropagation()}>
                 <button
-                  onClick={() => downloadCertificate(kiosk.kioskId)}
-                  disabled={dlLoading === kiosk.kioskId}
-                  className="px-3 py-1.5 text-[0.55rem] font-bold uppercase tracking-[0.15em] transition-all hover:opacity-80 disabled:opacity-40"
-                  style={{ background: "#ff6b47", color: "#000" }}
+                  onClick={() => downloadCertificate(k.kioskId)}
+                  disabled={dlLoading === k.kioskId}
+                  className="rk-pdf-btn"
+                  style={{
+                    padding: "5px 10px", background: C.orange, color: "#000",
+                    border: "none", cursor: "pointer", fontFamily: "'Space Mono',monospace",
+                    fontSize: "0.5rem", fontWeight: 700, textTransform: "uppercase",
+                    letterSpacing: "0.12em", transition: "opacity 0.15s",
+                    opacity: dlLoading === k.kioskId ? 0.4 : 1,
+                  }}
                 >
-                  {dlLoading === kiosk.kioskId ? "..." : "PDF"}
+                  {dlLoading === k.kioskId ? "..." : "PDF"}
                 </button>
               </div>
             </div>
@@ -283,360 +382,332 @@ export default function RegisteredKiosks() {
         </div>
       )}
 
-      {/* Right-side Detail Panel */}
+      {/* ── Right Panel ── */}
       <AnimatePresence>
         {selected && (
-          <div className="fixed inset-0 z-[200] overflow-hidden flex justify-end">
-            {/* Backdrop */}
+          <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", justifyContent: "flex-end" }}>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0"
-              style={{ background: "rgba(0,0,0,0.6)" }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
               onClick={() => setSelected(null)}
             />
-            {/* Panel */}
             <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative h-full w-[85vw] max-w-[1300px] min-w-[600px] flex flex-col shadow-2xl z-10"
-              style={{ background: surfaceBg, borderColor: borderStrong, borderLeftWidth: "1px" }}
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 220 }}
+              style={{
+                position: "relative", height: "100%", width: "80vw", maxWidth: 1200, minWidth: 640,
+                display: "flex", flexDirection: "column", background: surf,
+                borderLeft: `1px solid ${bs}`, zIndex: 10,
+              }}
             >
-              {/* Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b shrink-0" style={{ borderColor: borderMuted }}>
-                <div>
-                  <p className="text-[0.5rem] uppercase tracking-[0.25em] mb-0.5" style={{ color: labelColor }}>Kiosk Details</p>
-                  <h3 className="text-[1.5rem] font-black uppercase leading-none" style={{ letterSpacing: "-0.02em", color: textColor }}>
-                    {selected.kioskId}
-                  </h3>
+              {/* Panel header */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 24px", borderBottom: `1px solid ${bm}`,
+                background: isDark ? "rgba(255,107,71,0.04)" : "rgba(255,107,71,0.03)", flexShrink: 0,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div>
+                    <p style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.45rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.25em", color: lc, marginBottom: 3 }}>Kiosk Details</p>
+                    <h3 style={{ fontFamily: "'Inter',sans-serif", fontSize: "1.4rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.03em", color: tc, lineHeight: 1 }}>
+                      {selected.kioskId}
+                    </h3>
+                  </div>
+                  <StatusBadge status={selected.status} />
                 </div>
-                <div className="flex items-center gap-3">
-                  {/* Hidden delete — small discrete icon */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {/* Tab switcher */}
+                  <div style={{ display: "flex", border: `1px solid ${bm}`, marginRight: 8 }}>
+                    {(["info", "analytics"] as const).map(t => (
+                      <button key={t} onClick={() => setActiveTab(t)} style={{
+                        padding: "7px 16px", background: activeTab === t ? C.orange : "transparent",
+                        color: activeTab === t ? "#000" : lc, border: "none", cursor: "pointer",
+                        fontFamily: "'Space Mono',monospace", fontSize: "0.5rem", fontWeight: 700,
+                        textTransform: "uppercase", letterSpacing: "0.12em", transition: "all 0.2s",
+                      }}>
+                        {t === "info" ? "Info" : "Analytics"}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
                     disabled={selected.status === "DELETE_PENDING"}
-                    title={selected.status === "DELETE_PENDING" ? "Deletion pending" : "Delete kiosk"}
-                    className="w-8 h-8 flex items-center justify-center border transition-all hover:border-red-500/50 hover:text-red-400 disabled:opacity-30"
-                    style={{ borderColor: borderMuted, color: labelColor }}
+                    title="Delete kiosk"
+                    className="rk-icon-btn"
+                    style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${bm}`, background: "transparent", cursor: "pointer", color: lc, transition: "all 0.2s" }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
                       <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                     </svg>
                   </button>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="w-8 h-8 flex items-center justify-center border transition-colors hover:bg-white/10"
-                    style={{ borderColor: borderMuted, color: labelColor }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                  <button onClick={() => setSelected(null)} className="rk-icon-btn" style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${bm}`, background: "transparent", cursor: "pointer", color: lc, transition: "all 0.2s" }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
                       <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                   </button>
                 </div>
               </div>
 
-              {/* Scrollable Body — 2 column grid */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-[1fr_1fr] h-full divide-x" style={{ borderColor: borderMuted, borderRightWidth: 0 }}>
+              {/* Body */}
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {activeTab === "info" ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", height: "100%" }}>
 
-                  {/* ── LEFT COLUMN ── */}
-                  <div className="p-6 flex flex-col gap-6 overflow-y-auto">
+                    {/* LEFT */}
+                    <div style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 24 }}>
 
-                    {/* OVERVIEW */}
-                    <section>
-                      <p className="text-[0.5rem] uppercase tracking-[0.3em] mb-4 pb-2 border-b font-bold" style={{ color: labelColor, borderColor: borderMuted }}>Overview</p>
-                      <div className="grid grid-cols-2 gap-0">
-                        {[
-                          ["Status", selected.status],
-                          ["Type", selected.kioskType || "—"],
-                          ["Service", selected.serviceType === "KSS" ? "Kiosk Sale Services" : selected.serviceType === "MKS" ? "Managed Services" : "—"],
-                          ["Owner", selected.ownerName || "—"],
-                          ["Phone", selected.ownerPhone || "—"],
-                          ["Email", selected.ownerEmail || "—"],
-                          ["Location", selected.locationName || "—"],
-                          ["Registered", selected.createdAt ? new Date(selected.createdAt).toLocaleDateString("en-IN") : "—"],
-                        ].map(([label, value], i) => (
-                          <div key={label} className="py-3 px-2 border-b flex flex-col gap-0.5" style={{ borderColor: borderMuted, background: i % 4 < 2 ? subBg : "transparent" }}>
-                            <span className="text-[0.5rem] uppercase tracking-[0.15em]" style={{ color: labelColor }}>{label}</span>
-                            <span className="text-[0.8rem] font-semibold truncate" style={{ color: textColor }} title={value as string}>{value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-
-                    {/* SSH ACCESS */}
-                    <section>
-                      <p className="text-[0.5rem] uppercase tracking-[0.3em] mb-3 pb-2 border-b font-bold" style={{ color: labelColor, borderColor: borderMuted }}>SSH Access</p>
-                      <div className="flex items-center justify-between p-3 border" style={{ borderColor: borderMuted, background: subBg }}>
-                        <code className="text-[0.65rem] font-mono" style={{ color: "#ff6b47" }}>
-                          ssh {(selected as any).username || `innvera-${selected.kioskId}`}@{selected.ipAddress || "0.0.0.0"}
-                        </code>
-                        <button
-                          onClick={() => { navigator.clipboard.writeText(`ssh ${(selected as any).username || `innvera-${selected.kioskId}`}@${selected.ipAddress || "0.0.0.0"}`); alert("Copied!") }}
-                          className="text-[0.5rem] font-bold uppercase tracking-[0.15em] border px-3 py-1 hover:bg-white hover:text-black transition-colors ml-3 shrink-0"
-                          style={{ borderColor: borderStrong, color: labelColor }}
-                        >Copy</button>
-                      </div>
-                    </section>
-
-                    {/* QR CODE */}
-                    <section>
-                      <p className="text-[0.5rem] uppercase tracking-[0.3em] mb-3 pb-2 border-b font-bold" style={{ color: labelColor, borderColor: borderMuted }}>Kiosk QR Code</p>
-                      <div className="flex items-start gap-4 p-4 border" style={{ borderColor: borderMuted, background: subBg }}>
-                        <div className="p-2 bg-white shrink-0">
-                          <QRCodeSVG value={`https://pixel-livid-two.vercel.app/?kiosk_id=${selected.kioskId}`} size={80} bgColor="#fff" fgColor="#000" level="M" />
+                      {/* Overview grid */}
+                      <section>
+                        <SectionHeader label="Overview" color={C.blue} />
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: bm }}>
+                          {[
+                            ["Status", <StatusBadge key="s" status={selected.status} />],
+                            ["Type", selected.kioskType || "—"],
+                            ["Service", selected.serviceType === "KSS" ? "Kiosk Sale Services" : selected.serviceType === "MKS" ? "Managed Services" : "—"],
+                            ["Owner", selected.ownerName || "—"],
+                            ["Phone", selected.ownerPhone || "—"],
+                            ["Email", selected.ownerEmail || "—"],
+                            ["Location", selected.locationName || "—"],
+                            ["Registered", selected.createdAt ? new Date(selected.createdAt).toLocaleDateString("en-IN") : "—"],
+                          ].map(([label, value]) => (
+                            <div key={label as string} style={{ padding: "12px 14px", background: surf, display: "flex", flexDirection: "column", gap: 5 }}>
+                              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.45rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: lc }}>{label as string}</span>
+                              {typeof value === "string"
+                                ? <span style={{ fontSize: "0.8rem", fontWeight: 600, color: tc, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={value}>{value}</span>
+                                : value}
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex flex-col gap-2 min-w-0">
-                          <p className="text-[0.5rem] uppercase tracking-[0.15em]" style={{ color: labelColor }}>Kiosk URL</p>
-                          <code className="text-[0.65rem] font-mono break-all" style={{ color: "#ff6b47" }}>
-                            https://pixel-livid-two.vercel.app/?kiosk_id={selected.kioskId}
+                      </section>
+
+                      {/* SSH Access */}
+                      <section>
+                        <SectionHeader label="SSH Access" color={C.blue} />
+                        <div style={{ padding: "12px 16px", border: `1px solid ${bm}`, background: sub, display: "flex", alignItems: "center", gap: 12 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="2" strokeLinecap="square" style={{ flexShrink: 0 }}>
+                            <rect x="2" y="3" width="20" height="14" /><path d="M8 21h8M12 17v4" /><path d="M7 8l4 3-4 3" /><line x1="12" y1="14" x2="17" y2="14" />
+                          </svg>
+                          <code style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.65rem", color: C.orange, flex: 1 }}>
+                            ssh {(selected as any).username || `innvera-${selected.kioskId}`}@{selected.ipAddress || "0.0.0.0"}
                           </code>
                           <button
-                            onClick={() => { navigator.clipboard.writeText(`https://pixel-livid-two.vercel.app/?kiosk_id=${selected.kioskId}`); setQrCopied(true); setTimeout(() => setQrCopied(false), 2000) }}
-                            className="self-start text-[0.5rem] font-bold uppercase tracking-[0.15em] border px-3 py-1.5 transition-all hover:bg-black hover:text-white"
-                            style={{ borderColor: borderStrong, color: qrCopied ? "#22c55e" : labelColor }}
-                          >{qrCopied ? "Copied!" : "Copy URL"}</button>
+                            onClick={() => { navigator.clipboard.writeText(`ssh ${(selected as any).username || `innvera-${selected.kioskId}`}@${selected.ipAddress || "0.0.0.0"}`); alert("Copied!") }}
+                            className="rk-copy-btn"
+                            style={{ padding: "5px 12px", border: `1px solid ${bs}`, background: "transparent", color: lc, cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", transition: "all 0.2s", flexShrink: 0 }}
+                          >Copy</button>
                         </div>
-                      </div>
-                    </section>
+                      </section>
 
-                    {/* BANK DETAILS */}
-                    <section>
-                      <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: borderMuted }}>
-                        <p className="text-[0.5rem] uppercase tracking-[0.3em] font-bold" style={{ color: labelColor }}>Bank Details</p>
-                        {!editingBank ? (
-                          <button onClick={() => setEditingBank(true)} className="text-[0.5rem] font-bold uppercase tracking-[0.1em] text-[#ff6b47] hover:opacity-70 transition-opacity">Edit</button>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <button onClick={() => setEditingBank(false)} className="text-[0.5rem] font-bold uppercase tracking-[0.1em]" style={{ color: labelColor }}>Cancel</button>
-                            <button onClick={handleSaveBank} disabled={bankSaving} className="text-[0.5rem] font-bold uppercase tracking-[0.1em] text-[#22c55e]">{bankSaving ? "Saving..." : "Save"}</button>
+                      {/* QR Code */}
+                      <section>
+                        <SectionHeader label="Kiosk QR Code" color={C.blue} />
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "14px 16px", border: `1px solid ${bm}`, background: sub }}>
+                          <div style={{ padding: 8, background: "#fff", flexShrink: 0 }}>
+                            <QRCodeSVG value={`https://pixel-livid-two.vercel.app/?kiosk_id=${selected.kioskId}`} size={78} bgColor="#fff" fgColor="#000" level="M" />
                           </div>
-                        )}
-                      </div>
-                      {editingBank ? (
-                        <div className="grid grid-cols-2 gap-3">
-                          {([
-                            ["Account Name", "accountName"],
-                            ["Account Number", "accountNumber"],
-                            ["IFSC Code", "ifscCode"],
-                            ["Bank Name", "bankName"],
-                          ] as [string, keyof typeof bankForm][]).map(([label, key]) => (
-                            <div key={key} className="flex flex-col gap-1">
-                              <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>{label}</label>
-                              <input
-                                value={bankForm[key]}
-                                onChange={e => setBankForm({ ...bankForm, [key]: e.target.value })}
-                                className="bg-transparent border-b px-0 py-2 text-[0.75rem] outline-none transition-all duration-200 focus:border-[#ff6b47]"
-                                style={{ borderColor: borderStrong, color: textColor, caretColor: "#ff6b47" }}
-                              />
-                            </div>
-                          ))}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+                            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.45rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: lc }}>Kiosk URL</span>
+                            <code style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.6rem", color: C.orange, wordBreak: "break-all", lineHeight: 1.5 }}>
+                              https://pixel-livid-two.vercel.app/?kiosk_id={selected.kioskId}
+                            </code>
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(`https://pixel-livid-two.vercel.app/?kiosk_id=${selected.kioskId}`); setQrCopied(true); setTimeout(() => setQrCopied(false), 2000) }}
+                              className="rk-copy-btn"
+                              style={{ alignSelf: "flex-start", padding: "6px 14px", border: `1px solid ${qrCopied ? C.green : bs}`, background: qrCopied ? C.greenDim : "transparent", color: qrCopied ? C.green : lc, cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", transition: "all 0.2s" }}
+                            >{qrCopied ? "Copied!" : "Copy URL"}</button>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-0">
-                          {[
-                            ["Account Name", selected.bankDetails?.accountName || "—"],
-                            ["Account No.", selected.bankDetails?.accountNumber || "—"],
-                            ["IFSC", selected.bankDetails?.ifscCode || "—"],
-                            ["Bank", selected.bankDetails?.bankName || "—"],
-                          ].map(([label, value]) => (
-                            <div key={label} className="py-2 px-2 border-b flex flex-col gap-0.5" style={{ borderColor: borderMuted }}>
-                              <span className="text-[0.5rem] uppercase tracking-[0.15em]" style={{ color: labelColor }}>{label}</span>
-                              <span className="text-[0.75rem] font-medium" style={{ color: textColor }}>{value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </section>
+                      </section>
 
-                    {/* SETTLEMENTS */}
-                    <section>
-                      <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: borderMuted }}>
-                        <p className="text-[0.5rem] uppercase tracking-[0.3em] font-bold" style={{ color: labelColor }}>Settlements</p>
-                        {!showSettlementForm ? (
-                          <button onClick={() => setShowSettlementForm(true)} className="text-[0.5rem] font-bold uppercase tracking-[0.1em] text-[#ff6b47] hover:opacity-70 transition-opacity">Add New</button>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <button onClick={() => setShowSettlementForm(false)} className="text-[0.5rem] font-bold uppercase tracking-[0.1em]" style={{ color: labelColor }}>Cancel</button>
-                            <button onClick={handleSaveSettlement} disabled={settlementSaving} className="text-[0.5rem] font-bold uppercase tracking-[0.1em] text-[#22c55e]">{settlementSaving ? "Saving..." : "Submit"}</button>
-                          </div>
-                        )}
-                      </div>
-                      {showSettlementForm ? (
-                        <div className="flex flex-col gap-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>Amount (₹) *</label>
-                              <input type="number" value={settlementForm.amount} onChange={e => setSettlementForm({ ...settlementForm, amount: e.target.value })}
-                                className="bg-transparent border-b px-0 py-2 text-[0.75rem] outline-none transition-all duration-200 focus:border-[#ff6b47]"
-                                style={{ borderColor: borderStrong, color: textColor, caretColor: "#ff6b47" }} placeholder="0.00" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>Transaction ID *</label>
-                              <input value={settlementForm.transactionId} onChange={e => setSettlementForm({ ...settlementForm, transactionId: e.target.value })}
-                                className="bg-transparent border-b px-0 py-2 text-[0.75rem] outline-none transition-all duration-200 focus:border-[#ff6b47]"
-                                style={{ borderColor: borderStrong, color: textColor, caretColor: "#ff6b47" }} placeholder="TX ID" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>From Date *</label>
-                              <input type="date" value={settlementForm.fromDate} onChange={e => setSettlementForm({ ...settlementForm, fromDate: e.target.value })}
-                                className="bg-transparent border-b px-0 py-2 text-[0.75rem] outline-none transition-all duration-200 focus:border-[#ff6b47]"
-                                style={{ borderColor: borderStrong, color: textColor }} />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>To Date *</label>
-                              <input type="date" value={settlementForm.toDate} onChange={e => setSettlementForm({ ...settlementForm, toDate: e.target.value })}
-                                className="bg-transparent border-b px-0 py-2 text-[0.75rem] outline-none transition-all duration-200 focus:border-[#ff6b47]"
-                                style={{ borderColor: borderStrong, color: textColor }} />
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>Proof Image (Optional)</label>
-                            <input type="file" accept="image/*" onChange={handleFileUpload}
-                              className="text-[0.65rem] file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-[0.55rem] file:uppercase file:tracking-[0.1em] file:font-bold file:bg-white/10 file:text-white hover:file:bg-white/20 transition-colors"
-                              style={{ color: textColor }} />
-                            {settlementForm.proofImage && <span className="text-[0.6rem] text-[#22c55e]">Image attached</span>}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto">
-                          {(!selected.settlements || selected.settlements.length === 0) ? (
-                            <p className="text-[0.7rem] italic" style={{ color: labelColor }}>No settlements found.</p>
+                      {/* Bank Details */}
+                      <section>
+                        <SectionHeader label="Bank Details" color={C.green}>
+                          {!editingBank ? (
+                            <button onClick={() => setEditingBank(true)} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.orange, background: "none", border: "none", cursor: "pointer" }}>Edit</button>
                           ) : (
-                            selected.settlements.map((s, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-2 border" style={{ borderColor: borderMuted, background: subBg }}>
-                                <div>
-                                  <span className="text-[0.85rem] font-bold" style={{ color: textColor }}>₹{s.amount}</span>
-                                  <span className="text-[0.55rem] ml-2 uppercase" style={{ color: labelColor }}>Tx: {s.transactionId}</span>
-                                </div>
-                                <span className="text-[0.5rem] uppercase tracking-[0.15em] font-bold px-2 py-0.5 border"
-                                  style={{ borderColor: s.status === "APPROVED" ? "#22c55e" : s.status === "REJECTED" ? "#ef4444" : "#ff6b47", color: s.status === "APPROVED" ? "#22c55e" : s.status === "REJECTED" ? "#ef4444" : "#ff6b47" }}>
-                                  {s.status}
-                                </span>
-                              </div>
-                            ))
+                            <div style={{ display: "flex", gap: 12 }}>
+                              <button onClick={() => setEditingBank(false)} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: lc, background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+                              <button onClick={handleSaveBank} disabled={bankSaving} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.green, background: "none", border: "none", cursor: "pointer" }}>{bankSaving ? "Saving..." : "Save"}</button>
+                            </div>
                           )}
-                        </div>
-                      )}
-                    </section>
-
-                    {/* CERTIFICATE */}
-                    <section>
-                      <p className="text-[0.5rem] uppercase tracking-[0.3em] mb-3 pb-2 border-b font-bold" style={{ color: labelColor, borderColor: borderMuted }}>Certificate</p>
-                      <button
-                        onClick={async () => {
-                          if (viewCert) { setViewCert(false); return }
-                          setCertLoading(true)
-                          try {
-                            const res = await fetch(`${KIOSK_BACKEND}/api/kiosk/${selected.kioskId}/certificate`)
-                            if (!res.ok) throw new Error("Failed")
-                            const blob = await res.blob()
-                            const url = URL.createObjectURL(blob)
-                            setCertBlobUrl(url)
-                            setViewCert(true)
-                          } catch { alert("Could not load certificate") }
-                          finally { setCertLoading(false) }
-                        }}
-                        className="w-full py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.2em] transition-all border hover:bg-[#ff6b47] hover:text-black hover:border-[#ff6b47]"
-                        style={{ borderColor: borderStrong, color: certLoading ? labelColor : "#ff6b47" }}
-                      >
-                        {certLoading ? "Loading..." : viewCert ? "Hide Certificate" : "View Certificate"}
-                      </button>
-                      <AnimatePresence>
-                        {viewCert && certBlobUrl && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }} animate={{ height: 340, opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                            className="overflow-hidden mt-3 border" style={{ borderColor: borderMuted }}
-                          >
-                            <iframe src={certBlobUrl} className="w-full" style={{ height: "340px", background: "#fff" }} title={`Certificate — ${selected.kioskId}`} />
-                          </motion.div>
+                        </SectionHeader>
+                        {editingBank ? (
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            {(["accountName", "accountNumber", "ifscCode", "bankName"] as const).map((k, i) => (
+                              <StyledInput key={k} label={["Account Name", "Account Number", "IFSC Code", "Bank Name"][i]} value={bankForm[k]} onChange={v => setBankForm({ ...bankForm, [k]: v })} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: bm }}>
+                            {[
+                              ["Account Name", selected.bankDetails?.accountName || "—"],
+                              ["Account No.", selected.bankDetails?.accountNumber || "—"],
+                              ["IFSC", selected.bankDetails?.ifscCode || "—"],
+                              ["Bank", selected.bankDetails?.bankName || "—"],
+                            ].map(([l, v]) => (
+                              <div key={l} style={{ padding: "10px 14px", background: surf, display: "flex", flexDirection: "column", gap: 4 }}>
+                                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.45rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: lc }}>{l}</span>
+                                <span style={{ fontSize: "0.78rem", fontWeight: 600, color: tc }}>{v}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                      </AnimatePresence>
-                    </section>
+                      </section>
 
+                      {/* Settlements */}
+                      <section>
+                        <SectionHeader label="Settlements" color={C.green}>
+                          {!showSettlementForm ? (
+                            <button onClick={() => setShowSettlementForm(true)} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.orange, background: "none", border: "none", cursor: "pointer" }}>+ Add New</button>
+                          ) : (
+                            <div style={{ display: "flex", gap: 12 }}>
+                              <button onClick={() => setShowSettlementForm(false)} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: lc, background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+                              <button onClick={handleSaveSettlement} disabled={settlementSaving} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.green, background: "none", border: "none", cursor: "pointer" }}>{settlementSaving ? "Saving..." : "Submit"}</button>
+                            </div>
+                          )}
+                        </SectionHeader>
+                        {showSettlementForm ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                              <StyledInput label="Amount (₹) *" type="number" value={settlementForm.amount} onChange={v => setSettlementForm({ ...settlementForm, amount: v })} placeholder="0.00" />
+                              <StyledInput label="Transaction ID *" value={settlementForm.transactionId} onChange={v => setSettlementForm({ ...settlementForm, transactionId: v })} placeholder="TX ID" />
+                              <StyledInput label="From Date *" type="date" value={settlementForm.fromDate} onChange={v => setSettlementForm({ ...settlementForm, fromDate: v })} />
+                              <StyledInput label="To Date *" type="date" value={settlementForm.toDate} onChange={v => setSettlementForm({ ...settlementForm, toDate: v })} />
+                            </div>
+                            <div style={{ padding: "12px 16px", border: `1px solid ${bm}`, background: sub }}>
+                              <label style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: lc, display: "block", marginBottom: 8 }}>Proof Image (Optional)</label>
+                              <input type="file" accept="image/*" onChange={handleFileUpload}
+                                style={{ color: tc, fontSize: "0.65rem", fontFamily: "'Inter',sans-serif" }} />
+                              {settlementForm.proofImage && <span style={{ display: "block", marginTop: 6, fontSize: "0.6rem", color: C.green, fontFamily: "'Space Mono',monospace" }}>Image attached</span>}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 180, overflowY: "auto" }}>
+                            {(!selected.settlements || selected.settlements.length === 0) ? (
+                              <div style={{ padding: "20px", textAlign: "center", border: `1px dashed ${bm}` }}>
+                                <p style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.6rem", color: lc, fontStyle: "italic" }}>No settlements found</p>
+                              </div>
+                            ) : (
+                              selected.settlements.map((s, idx) => (
+                                <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", border: `1px solid ${bm}`, background: sub }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                    <span style={{ fontSize: "0.9rem", fontWeight: 800, color: tc }}>₹{s.amount}</span>
+                                    <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.5rem", color: lc }}>Tx: {s.transactionId}</span>
+                                  </div>
+                                  <StatusBadge status={s.status} />
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </section>
+
+                      {/* Certificate */}
+                      <section>
+                        <SectionHeader label="Certificate" color={C.orange} />
+                        <button
+                          onClick={async () => {
+                            if (viewCert) { setViewCert(false); return }
+                            setCertLoading(true)
+                            try {
+                              const res = await fetch(`${KIOSK_BACKEND}/api/kiosk/${selected.kioskId}/certificate`)
+                              if (!res.ok) throw new Error("Failed")
+                              const blob = await res.blob()
+                              setCertBlobUrl(URL.createObjectURL(blob))
+                              setViewCert(true)
+                            } catch { alert("Could not load certificate") } finally { setCertLoading(false) }
+                          }}
+                          className="rk-cert-btn"
+                          style={{
+                            width: "100%", padding: "12px", border: `1px solid ${viewCert ? C.orange : bs}`,
+                            background: viewCert ? C.orangeDim : "transparent", color: certLoading ? lc : C.orange,
+                            cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "0.55rem",
+                            fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.2s",
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                            <rect x="3" y="3" width="18" height="18" /><path d="M9 12l2 2 4-4" /><line x1="3" y1="8" x2="21" y2="8" />
+                          </svg>
+                          {certLoading ? "Loading..." : viewCert ? "Hide Certificate" : "View Certificate"}
+                        </button>
+                        <AnimatePresence>
+                          {viewCert && certBlobUrl && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }} animate={{ height: 320, opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                              style={{ overflow: "hidden", marginTop: 8, border: `1px solid ${bm}` }}
+                            >
+                              <iframe src={certBlobUrl} style={{ width: "100%", height: 320, background: "#fff" }} title={`Certificate — ${selected.kioskId}`} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </section>
+                    </div>
+
+                    {/* RIGHT — Transactions */}
+                    <div style={{ padding: 24, overflowY: "auto", borderLeft: `1px solid ${bm}`, display: "flex", flexDirection: "column", gap: 24 }}>
+                      <section>
+                        <SectionHeader label="Recent Transactions" color={C.orange} />
+                        <KioskTransactions kioskId={selected.kioskId} isDark={isDark} bm={bm} lc={lc} tc={tc} sub={sub} onInvoicePdf={setInvoicePdfUrl} />
+                      </section>
+                    </div>
                   </div>
-
-                  {/* ── RIGHT COLUMN ── */}
-                  <div className="p-6 flex flex-col gap-6 border-l overflow-y-auto" style={{ borderColor: borderMuted }}>
-
-                    {/* RECENT TRANSACTIONS */}
-                    <section>
-                      <p className="text-[0.5rem] uppercase tracking-[0.3em] mb-4 pb-2 border-b font-bold" style={{ color: labelColor, borderColor: borderMuted }}>Recent Transactions</p>
-                      <KioskTransactions kioskId={selected.kioskId} isDark={isDark} borderMuted={borderMuted} labelColor={labelColor} textColor={textColor} subBg={subBg} onInvoicePdf={setInvoicePdfUrl} />
-                    </section>
-
-                    {/* ANALYTICS */}
-                    <section>
-                      <p className="text-[0.5rem] uppercase tracking-[0.3em] mb-4 pb-2 border-b font-bold" style={{ color: labelColor, borderColor: borderMuted }}>Analytics Overview</p>
-                      <KioskAnalytics kioskId={selected.kioskId} />
-                    </section>
-
+                ) : (
+                  /* Analytics tab */
+                  <div style={{ padding: 24, overflowY: "auto" }}>
+                    <KioskAnalytics kioskId={selected.kioskId} isDark={isDark} />
                   </div>
-                </div>
+                )}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Delete Confirm Modal */}
+      {/* ── Delete Modal ── */}
       <AnimatePresence>
         {showDeleteConfirm && selected && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-sm"
-            style={{ background: "rgba(0,0,0,0.85)" }}
+            style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.88)" }}
             onClick={() => setShowDeleteConfirm(false)}
           >
             <motion.div
-              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-              className="w-full max-w-[400px] border shadow-2xl p-6 flex flex-col gap-5"
-              style={{ background: surfaceBg, borderColor: borderStrong }}
+              initial={{ scale: 0.94, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 8 }}
+              style={{ width: "100%", maxWidth: 400, background: surf, border: `1px solid ${bs}`, padding: 28 }}
               onClick={e => e.stopPropagation()}
             >
-              <div>
-                <h3 className="text-[1.1rem] font-black uppercase mb-1" style={{ color: textColor, letterSpacing: "-0.01em" }}>Confirm Deletion</h3>
-                <p className="text-[0.7rem]" style={{ color: labelColor }}>
-                  This will send a deletion request for <strong style={{ color: textColor }}>{selected.kioskId}</strong> and initiate an approval flow.
-                </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, background: C.redDim, border: `1px solid ${C.red}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2" strokeLinecap="square">
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+                  </svg>
+                </div>
+                <h3 style={{ fontFamily: "'Inter',sans-serif", fontSize: "1rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", color: tc }}>Confirm Deletion</h3>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: labelColor }}>Type DELETE to confirm</label>
-                <input
-                  value={deleteInput}
-                  onChange={e => setDeleteInput(e.target.value)}
-                  className="bg-transparent border-b px-0 py-2 text-[0.8rem] outline-none w-full uppercase"
-                  style={{ borderColor: "rgba(239,68,68,0.5)", color: textColor, caretColor: "#ef4444" }}
-                  placeholder="DELETE"
-                />
+              <p style={{ fontSize: "0.72rem", color: lc, lineHeight: 1.7, marginBottom: 20 }}>
+                This will send a deletion request for <strong style={{ color: tc }}>{selected.kioskId}</strong> and initiate an approval flow.
+              </p>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: lc, display: "block", marginBottom: 8 }}>Type DELETE to confirm</label>
+                <StyledInput label="Confirmation" value={deleteInput} onChange={setDeleteInput} placeholder="DELETE" />
               </div>
-              <div className="flex gap-3">
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "11px", border: `1px solid ${bm}`, background: "transparent", color: lc, cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em" }}>Cancel</button>
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] transition-all border"
-                  style={{ borderColor: borderStrong, color: labelColor }}
-                >Cancel</button>
-                <button
+                  disabled={deleteInput !== "DELETE" || deleteLoading}
                   onClick={async () => {
                     if (deleteInput === "DELETE" && selected) {
                       setDeleteLoading(true)
-                      try {
-                        await fetch(`${KIOSK_BACKEND}/api/kiosk/${selected.kioskId}/request-delete`, { method: "POST", headers: { "Content-Type": "application/json" } })
-                      } catch {}
+                      try { await fetch(`${KIOSK_BACKEND}/api/kiosk/${selected.kioskId}/request-delete`, { method: "POST", headers: { "Content-Type": "application/json" } }) } catch { }
                       finally {
-                        setKiosks(prev => prev.map(k => k.kioskId === selected.kioskId ? { ...k, status: "DELETE_PENDING" } : k))
-                        setSelected(prev => prev && prev.kioskId === selected.kioskId ? { ...prev, status: "DELETE_PENDING" } : prev)
-                        setDeleteLoading(false)
-                        setShowDeleteConfirm(false)
+                        setKiosks(p => p.map(k => k.kioskId === selected.kioskId ? { ...k, status: "DELETE_PENDING" } : k))
+                        setSelected(p => p && p.kioskId === selected.kioskId ? { ...p, status: "DELETE_PENDING" } : p)
+                        setDeleteLoading(false); setShowDeleteConfirm(false)
                       }
                     }
                   }}
-                  disabled={deleteInput !== "DELETE" || deleteLoading}
-                  className="flex-1 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] transition-all bg-red-500 text-white disabled:opacity-40"
+                  style={{ flex: 1, padding: "11px", background: deleteInput === "DELETE" ? C.red : "rgba(239,68,68,0.15)", color: "#fff", border: "none", cursor: deleteInput === "DELETE" ? "pointer" : "not-allowed", fontFamily: "'Space Mono',monospace", fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", opacity: (deleteInput !== "DELETE" || deleteLoading) ? 0.5 : 1 }}
                 >{deleteLoading ? "Sending..." : "Confirm Delete"}</button>
               </div>
             </motion.div>
@@ -644,28 +715,21 @@ export default function RegisteredKiosks() {
         )}
       </AnimatePresence>
 
-      {/* Invoice PDF fullscreen overlay */}
+      {/* ── Invoice PDF Overlay ── */}
       <AnimatePresence>
         {invoicePdfUrl && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[500] flex flex-col"
-            style={{ background: "rgba(0,0,0,0.95)" }}
+            style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: "rgba(0,0,0,0.96)" }}
           >
-            <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-              <p className="text-[0.6rem] uppercase tracking-[0.2em]" style={{ color: "#a3a3a3" }}>Invoice PDF</p>
-              <button
-                onClick={() => setInvoicePdfUrl(null)}
-                className="w-8 h-8 flex items-center justify-center border hover:bg-white/10 transition-colors"
-                style={{ borderColor: "rgba(255,255,255,0.2)", color: "#a3a3a3" }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: `1px solid ${bm}` }}>
+              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.25em", color: lc }}>Invoice PDF</span>
+              <button onClick={() => setInvoicePdfUrl(null)} style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${bm}`, background: "transparent", cursor: "pointer", color: lc }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
-            <div className="flex-1">
-              <iframe src={invoicePdfUrl} className="w-full h-full" style={{ background: "#fff" }} title="Invoice" />
+            <div style={{ flex: 1 }}>
+              <iframe src={invoicePdfUrl} style={{ width: "100%", height: "100%", background: "#fff" }} title="Invoice" />
             </div>
           </motion.div>
         )}
@@ -673,14 +737,10 @@ export default function RegisteredKiosks() {
     </div>
   )
 }
-// ── Kiosk Transactions Sub-Component ──────────────────────────────────────────
-function KioskTransactions({ kioskId, isDark, borderMuted, labelColor, textColor, subBg, onInvoicePdf }: {
-  kioskId: string
-  isDark: boolean
-  borderMuted: string
-  labelColor: string
-  textColor: string
-  subBg: string
+
+// ── Kiosk Transactions ─────────────────────────────────────────────────────────
+function KioskTransactions({ kioskId, isDark, bm, lc, tc, sub, onInvoicePdf }: {
+  kioskId: string; isDark: boolean; bm: string; lc: string; tc: string; sub: string
   onInvoicePdf: (url: string) => void
 }) {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -691,7 +751,7 @@ function KioskTransactions({ kioskId, isDark, borderMuted, labelColor, textColor
     setLoading(true)
     fetch(`${FILE_UPLOADER_API}/api/transactions/kiosk/${kioskId}?limit=50`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.success && data.transactions) setTransactions(data.transactions) })
+      .then(d => { if (d?.success && d.transactions) setTransactions(d.transactions) })
       .finally(() => setLoading(false))
   }, [kioskId])
 
@@ -700,97 +760,114 @@ function KioskTransactions({ kioskId, isDark, borderMuted, labelColor, textColor
     try {
       const { generateInvoicePDF } = await import("@/utils/generateInvoicePDF")
       await generateInvoicePDF({
-        otp: tx.otp,
-        kioskId: tx.kioskId,
-        customerPhone: tx.customerPhone || "N/A",
+        otp: tx.otp, kioskId: tx.kioskId, customerPhone: tx.customerPhone || "N/A",
         totalAmount: (tx.amount || 0) / 100,
         queue: (tx.printDetails || []).map((p: any) => ({
-          fileName: p.fileName || "Document",
-          pagesToPrint: p.pageCount || 1,
+          fileName: p.fileName || "Document", pagesToPrint: p.pageCount || 1,
           printSettings: { copies: p.copies || 1, colorMode: p.colorMode || "bw", doubleSided: "one-side" },
           cost: ((p.pageCount || 1) * (p.copies || 1) * (p.colorMode === "color" ? 10 : 2))
         }))
       })
-    } catch (e) {
-      alert("Could not generate invoice PDF")
-    } finally {
-      setGeneratingInvoice(null)
-    }
+    } catch { alert("Could not generate invoice PDF") } finally { setGeneratingInvoice(null) }
   }
 
-  if (loading) return <p className="text-[0.7rem] italic" style={{ color: labelColor }}>Loading transactions...</p>
-  if (transactions.length === 0) return <p className="text-[0.7rem] italic" style={{ color: labelColor }}>No transactions found.</p>
+  if (loading) return (
+    <div style={{ padding: "24px", textAlign: "center" }}>
+      <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.6rem", color: lc, fontStyle: "italic" }}>Loading transactions...</span>
+    </div>
+  )
+  if (transactions.length === 0) return (
+    <div style={{ padding: "24px", textAlign: "center", border: `1px dashed ${bm}` }}>
+      <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.6rem", color: lc, fontStyle: "italic" }}>No transactions found</span>
+    </div>
+  )
 
   return (
-    <div className="flex flex-col">
-      {/* Header row */}
-      <div className="grid grid-cols-[1fr_80px_60px_60px_60px] gap-2 px-2 py-2 border-b text-[0.45rem] uppercase tracking-[0.15em]" style={{ borderColor: borderMuted, color: labelColor }}>
-        <span>Tx ID</span>
-        <span>Date</span>
-        <span>Pages</span>
-        <span>Amount</span>
-        <span>Action</span>
-      </div>
-      <div className="flex flex-col max-h-[400px] overflow-y-auto">
-        {transactions.map((tx, idx) => (
-          <div
-            key={idx}
-            className="grid grid-cols-[1fr_80px_60px_60px_60px] gap-2 px-2 py-2.5 border-b items-center transition-colors hover:bg-black/5"
-            style={{ borderColor: borderMuted, background: idx % 2 === 0 ? subBg : "transparent" }}
-          >
-            <span className="text-[0.6rem] font-mono font-bold truncate" style={{ color: textColor }}>{(tx.transactionId || tx._id || "").slice(0, 10).toUpperCase()}</span>
-            <span className="text-[0.55rem]" style={{ color: labelColor }}>
-              {new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-            </span>
-            <span className="text-[0.6rem] font-medium" style={{ color: textColor }}>{tx.totalPages || "—"}</span>
-            <span className="text-[0.65rem] font-bold" style={{ color: "#ff6b47" }}>₹{((tx.amount || 0) / 100).toFixed(0)}</span>
-            <button
-              onClick={() => handleInvoice(tx)}
-              disabled={generatingInvoice === (tx.transactionId || tx._id)}
-              className="text-[0.5rem] font-bold uppercase tracking-[0.1em] border px-1.5 py-1 transition-all hover:bg-[#ff6b47] hover:text-black hover:border-[#ff6b47] disabled:opacity-40"
-              style={{ borderColor: "#ff6b47", color: "#ff6b47" }}
-            >
-              {generatingInvoice === (tx.transactionId || tx._id) ? "..." : "Invoice"}
-            </button>
-          </div>
+    <div>
+      {/* Header */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 70px 50px 60px 60px",
+        padding: "8px 12px", borderBottom: `1px solid ${bm}`, background: sub,
+      }}>
+        {["Tx ID", "Date", "Pgs", "Amt", ""].map(h => (
+          <span key={h} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.44rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.16em", color: lc }}>{h}</span>
         ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", maxHeight: 380, overflowY: "auto" }}>
+        {transactions.map((tx, idx) => {
+          const isCaptured = tx.status === "CAPTURED"
+          return (
+            <div
+              key={idx}
+              style={{
+                display: "grid", gridTemplateColumns: "1fr 70px 50px 60px 60px",
+                padding: "10px 12px", borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}`,
+                alignItems: "center", background: idx % 2 === 0 ? sub : "transparent",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 5, height: 5, background: isCaptured ? C.green : C.red, flexShrink: 0 }} />
+                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.58rem", fontWeight: 700, color: tc, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {(tx.transactionId || tx._id || "").slice(0, 10).toUpperCase()}
+                </span>
+              </div>
+              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.52rem", color: lc }}>
+                {new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+              </span>
+              <span style={{ fontSize: "0.62rem", fontWeight: 600, color: tc }}>{tx.totalPages || "—"}</span>
+              <span style={{ fontSize: "0.65rem", fontWeight: 800, color: C.orange }}>₹{((tx.amount || 0) / 100).toFixed(0)}</span>
+              <button
+                onClick={() => handleInvoice(tx)}
+                disabled={generatingInvoice === (tx.transactionId || tx._id)}
+                style={{
+                  padding: "4px 8px", border: `1px solid ${C.orange}`, background: "transparent",
+                  color: C.orange, cursor: "pointer", fontFamily: "'Space Mono',monospace",
+                  fontSize: "0.44rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
+                  transition: "all 0.15s", opacity: generatingInvoice === (tx.transactionId || tx._id) ? 0.4 : 1,
+                }}
+                className="rk-inv-btn"
+              >
+                {generatingInvoice === (tx.transactionId || tx._id) ? "..." : "INV"}
+              </button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ── Kiosk Analytics Sub-Component ─────────────────────────────────────────────
-function KioskAnalytics({ kioskId }: { kioskId: string }) {
+// ── Kiosk Analytics ────────────────────────────────────────────────────────────
+function KioskAnalytics({ kioskId, isDark }: { kioskId: string; isDark: boolean }) {
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedTx, setSelectedTx] = useState<any>(null)
   const [period, setPeriod] = useState<"today" | "week" | "month">("week")
-  const [weekOffset, setWeekOffset] = useState(0) // 0 = current, 1 = prev week, etc.
+  const [weekOffset, setWeekOffset] = useState(0)
+  const [selectedTx, setSelectedTx] = useState<any>(null)
+
+  const lc = isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)"
+  const tc = isDark ? "#ffffff" : "#0a0a0a"
+  const bm = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"
+  const sub = isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"
 
   useEffect(() => {
     setLoading(true)
     fetch(`${FILE_UPLOADER_API}/api/transactions/kiosk/${kioskId}?limit=200`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.success && data.transactions) setTransactions(data.transactions) })
+      .then(d => { if (d?.success && d.transactions) setTransactions(d.transactions) })
       .finally(() => setLoading(false))
   }, [kioskId])
 
-  // Filter transactions by period + weekOffset
   const filtered = (() => {
     const now = new Date()
     return transactions.filter(tx => {
       const d = new Date(tx.createdAt)
       if (period === "today") {
-        const target = new Date(now)
-        target.setDate(now.getDate() - weekOffset)
-        return d.toDateString() === target.toDateString()
+        const t = new Date(now); t.setDate(now.getDate() - weekOffset)
+        return d.toDateString() === t.toDateString()
       } else if (period === "week") {
-        const start = new Date(now)
-        start.setDate(now.getDate() - weekOffset * 7 - 6)
-        start.setHours(0, 0, 0, 0)
-        const end = new Date(now)
-        end.setDate(now.getDate() - weekOffset * 7)
-        end.setHours(23, 59, 59, 999)
+        const start = new Date(now); start.setDate(now.getDate() - weekOffset * 7 - 6); start.setHours(0, 0, 0, 0)
+        const end = new Date(now); end.setDate(now.getDate() - weekOffset * 7); end.setHours(23, 59, 59, 999)
         return d >= start && d <= end
       } else {
         const start = new Date(now.getFullYear(), now.getMonth() - weekOffset, 1)
@@ -803,12 +880,10 @@ function KioskAnalytics({ kioskId }: { kioskId: string }) {
   const totalRevenue = filtered.reduce((s, t) => s + (t.amount || 0), 0) / 100
   const txCount = filtered.length
 
-  // Period label for the date nav
   const periodLabel = (() => {
     const now = new Date()
     if (period === "today") {
-      const d = new Date(now)
-      d.setDate(now.getDate() - weekOffset)
+      const d = new Date(now); d.setDate(now.getDate() - weekOffset)
       return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
     } else if (period === "week") {
       const end = new Date(now); end.setDate(now.getDate() - weekOffset * 7)
@@ -820,130 +895,191 @@ function KioskAnalytics({ kioskId }: { kioskId: string }) {
     }
   })()
 
-  // Chart data (daily buckets within filtered period)
-  const chartData = (() => {
-    const days: Record<string, { date: string; revenue: number; count: number }> = {}
+  // Revenue bar chart: always 7 buckets for week, daily buckets otherwise
+  const revenueChartData = (() => {
+    if (period === "week") {
+      // Always show 7 days
+      const now = new Date()
+      const days = []
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now)
+        d.setDate(now.getDate() - weekOffset * 7 - i)
+        d.setHours(0, 0, 0, 0)
+        const label = d.toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+        const txsOnDay = filtered.filter(tx => {
+          const td = new Date(tx.createdAt); td.setHours(0, 0, 0, 0)
+          return td.getTime() === d.getTime()
+        })
+        days.push({ date: label, revenue: txsOnDay.reduce((s, t) => s + (t.amount || 0) / 100, 0), count: txsOnDay.length })
+      }
+      return days
+    }
+    const buckets: Record<string, { date: string; revenue: number; count: number }> = {}
     filtered.forEach(tx => {
       const day = new Date(tx.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })
-      if (!days[day]) days[day] = { date: day, revenue: 0, count: 0 }
-      days[day].revenue += (tx.amount || 0) / 100
-      days[day].count += 1
+      if (!buckets[day]) buckets[day] = { date: day, revenue: 0, count: 0 }
+      buckets[day].revenue += (tx.amount || 0) / 100
+      buckets[day].count += 1
     })
-    return Object.values(days)
+    return Object.values(buckets)
   })()
 
-  if (loading) return <p className="text-[0.75rem] opacity-50 italic">Loading analytics...</p>
+  // Transaction count line chart
+  const txLineData = (() => {
+    if (period === "week") {
+      const now = new Date()
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(now); d.setDate(now.getDate() - weekOffset * 7 - (6 - i)); d.setHours(0, 0, 0, 0)
+        const label = d.toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+        const cnt = filtered.filter(tx => { const td = new Date(tx.createdAt); td.setHours(0, 0, 0, 0); return td.getTime() === d.getTime() }).length
+        return { date: label, count: cnt }
+      })
+    }
+    const bk: Record<string, { date: string; count: number }> = {}
+    filtered.forEach(tx => {
+      const day = new Date(tx.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+      if (!bk[day]) bk[day] = { date: day, count: 0 }; bk[day].count++
+    })
+    return Object.values(bk)
+  })()
+
+  if (loading) return (
+    <div style={{ padding: 40, textAlign: "center" }}>
+      <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.6rem", color: lc }}>Loading analytics...</span>
+    </div>
+  )
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Period tabs */}
-      <div className="flex gap-0 border" style={{ borderColor: "rgba(255,255,255,0.1)", display: "inline-flex" }}>
-        {(["today", "week", "month"] as const).map(p => (
-          <button
-            key={p}
-            onClick={() => { setPeriod(p); setWeekOffset(0) }}
-            className="px-4 py-2 text-[0.55rem] font-bold uppercase tracking-[0.15em] transition-all duration-200"
-            style={{
-              background: period === p ? "#ff6b47" : "transparent",
-              color: period === p ? "#000" : "#a3a3a3",
-              borderRight: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            {p === "today" ? "Day" : p === "week" ? "Week" : "Month"}
-          </button>
-        ))}
-      </div>
-
-      {/* Revenue summary + date nav */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[0.5rem] uppercase tracking-[0.2em] mb-1" style={{ color: "#4a4a4a" }}>Revenue</p>
-          <p className="text-[1.4rem] font-black leading-none" style={{ letterSpacing: "-0.02em" }}>
-            ₹{totalRevenue.toFixed(0)}
-            <span className="text-[0.65rem] font-normal ml-2" style={{ color: "#4a4a4a" }}>{txCount} txns</span>
-          </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Controls */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        {/* Period tabs */}
+        <div style={{ display: "inline-flex", border: `1px solid ${bm}` }}>
+          {(["today", "week", "month"] as const).map(p => (
+            <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }} style={{
+              padding: "8px 18px", background: period === p ? C.orange : "transparent",
+              color: period === p ? "#000" : lc, border: "none", borderRight: `1px solid ${bm}`,
+              cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "0.5rem",
+              fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", transition: "all 0.18s",
+            }}>
+              {p === "today" ? "Day" : p === "week" ? "Week" : "Month"}
+            </button>
+          ))}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setWeekOffset(o => o + 1)}
-            className="w-7 h-7 flex items-center justify-center border transition-all hover:bg-white hover:text-black"
-            style={{ borderColor: "rgba(255,255,255,0.2)", color: "#a3a3a3" }}
-          >
+        {/* Date nav */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => setWeekOffset(o => o + 1)} className="rk-nav-btn" style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${bm}`, background: "transparent", cursor: "pointer", color: lc, transition: "all 0.15s" }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square"><polyline points="15 18 9 12 15 6" /></svg>
           </button>
-          <span className="text-[0.55rem] uppercase tracking-[0.1em]" style={{ color: "#4a4a4a", minWidth: "8rem", textAlign: "center" }}>{periodLabel}</span>
-          <button
-            onClick={() => setWeekOffset(o => Math.max(0, o - 1))}
-            disabled={weekOffset === 0}
-            className="w-7 h-7 flex items-center justify-center border transition-all hover:bg-white hover:text-black disabled:opacity-30"
-            style={{ borderColor: "rgba(255,255,255,0.2)", color: "#a3a3a3" }}
-          >
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.52rem", color: lc, minWidth: "8rem", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.05em" }}>{periodLabel}</span>
+          <button onClick={() => setWeekOffset(o => Math.max(0, o - 1))} disabled={weekOffset === 0} className="rk-nav-btn" style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${bm}`, background: "transparent", cursor: weekOffset === 0 ? "not-allowed" : "pointer", color: lc, opacity: weekOffset === 0 ? 0.3 : 1, transition: "all 0.15s" }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square"><polyline points="9 18 15 12 9 6" /></svg>
           </button>
         </div>
       </div>
 
-      {/* Bar chart */}
-      <div className="h-[120px] w-full">
-        {chartData.length === 0 ? (
-          <div className="h-full border border-dashed flex items-center justify-center" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-            <span className="text-[0.6rem]" style={{ color: "#4a4a4a" }}>No data for this period</span>
+      {/* Stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: bm }}>
+        {[
+          {
+            label: "Revenue", value: `₹${totalRevenue.toFixed(0)}`, color: C.orange, icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="2" strokeLinecap="square"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
+            )
+          },
+          {
+            label: "Transactions", value: txCount, color: C.green, icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="square"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>
+            )
+          },
+        ].map(s => (
+          <div key={s.label} style={{ padding: "16px 18px", background: isDark ? "#070707" : "#fff", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 38, height: 38, background: s.color + "15", border: `1px solid ${s.color}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {s.icon}
+            </div>
+            <div>
+              <p style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.46rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: lc, marginBottom: 4 }}>{s.label}</p>
+              <p style={{ fontSize: "1.4rem", fontWeight: 900, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Revenue Bar Chart */}
+      <div style={{ border: `1px solid ${bm}`, padding: "16px 16px 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <div style={{ width: 3, height: 14, background: C.orange }} />
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", color: lc }}>Revenue — {period === "week" ? "7 Days" : period === "today" ? "Today" : "Monthly"}</span>
+        </div>
+        {revenueChartData.length === 0 || revenueChartData.every(d => d.revenue === 0) ? (
+          <div style={{ height: 140, display: "flex", alignItems: "center", justifyContent: "center", border: `1px dashed ${bm}` }}>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.55rem", color: lc }}>No data for this period</span>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-            <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={140} minWidth={0}>
+            <BarChart data={revenueChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: lc, fontSize: 9, fontFamily: "'Space Mono',monospace" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: lc, fontSize: 9, fontFamily: "'Space Mono',monospace" }} axisLine={false} tickLine={false} width={38} />
               <Tooltip
-                contentStyle={{ background: "#050505", border: "1px solid #333", fontSize: "10px" }}
-                labelStyle={{ color: "#a3a3a3" }}
-                itemStyle={{ color: "#fff" }}
-                formatter={(val: any) => [`₹${Number(val).toFixed(0)}`, "Revenue"]}
+                contentStyle={{ background: isDark ? "#0a0a0a" : "#fff", border: `1px solid ${bm}`, fontSize: 10, fontFamily: "'Space Mono',monospace" }}
+                labelStyle={{ color: lc }} itemStyle={{ color: C.orange }}
+                formatter={(v: any) => [`₹${Number(v).toFixed(0)}`, "Revenue"]}
               />
-              <Bar dataKey="revenue" name="Revenue" fill="#ff6b47" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="revenue" fill={C.orange} radius={[2, 2, 0, 0]} maxBarSize={32} />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 border bg-black/50" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-          <p className="text-[0.5rem] uppercase tracking-[0.2em] mb-1" style={{ color: "#4a4a4a" }}>Revenue (Period)</p>
-          <p className="text-[1rem] font-bold text-white">₹{totalRevenue.toFixed(0)}</p>
+      {/* Transaction Count Line Chart */}
+      <div style={{ border: `1px solid ${bm}`, padding: "16px 16px 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <div style={{ width: 3, height: 14, background: C.blue }} />
+          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", color: lc }}>Transaction Count</span>
         </div>
-        <div className="p-3 border bg-black/50" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-          <p className="text-[0.5rem] uppercase tracking-[0.2em] mb-1" style={{ color: "#4a4a4a" }}>Transactions</p>
-          <p className="text-[1rem] font-bold" style={{ color: "#22c55e" }}>{txCount}</p>
-        </div>
+        {txLineData.length === 0 || txLineData.every(d => d.count === 0) ? (
+          <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", border: `1px dashed ${bm}` }}>
+            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.55rem", color: lc }}>No data for this period</span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={120} minWidth={0}>
+            <LineChart data={txLineData} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: lc, fontSize: 9, fontFamily: "'Space Mono',monospace" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: lc, fontSize: 9, fontFamily: "'Space Mono',monospace" }} axisLine={false} tickLine={false} width={28} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ background: isDark ? "#0a0a0a" : "#fff", border: `1px solid ${bm}`, fontSize: 10, fontFamily: "'Space Mono',monospace" }}
+                labelStyle={{ color: lc }} itemStyle={{ color: C.blue }}
+                formatter={(v: any) => [v, "Transactions"]}
+              />
+              <Line
+                type="monotone" dataKey="count" stroke={C.blue} strokeWidth={2} dot={{ fill: C.blue, r: 4, strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: C.blue, stroke: isDark ? "#070707" : "#fff", strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
-      {/* Recent transactions */}
+      {/* Recent transactions in analytics */}
       <div>
-        <p className="text-[0.55rem] uppercase tracking-[0.2em] mb-3" style={{ color: "#4a4a4a" }}>Recent Transactions</p>
+        <SectionHeader label="Transactions in Period" color={C.green} />
         {filtered.length === 0 ? (
-          <p className="text-[0.7rem]" style={{ color: "#4a4a4a" }}>No transactions for this period</p>
+          <div style={{ padding: "20px", textAlign: "center", border: `1px dashed ${bm}` }}>
+            <p style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.6rem", color: lc }}>No transactions for this period</p>
+          </div>
         ) : (
-          <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto pr-1">
-            {filtered.slice(0, 8).map((tx, idx) => (
-              <div key={idx} className="flex justify-between items-center p-2 border bg-white/5" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
+            {filtered.slice(0, 10).map((tx, idx) => (
+              <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", border: `1px solid ${bm}`, background: sub }}>
                 <div>
-                  <p className="text-[0.7rem] font-bold text-white">₹{((tx.amount || 0) / 100).toFixed(0)}</p>
-                  <p className="text-[0.55rem] uppercase" style={{ color: "#a3a3a3" }}>
+                  <p style={{ fontSize: "0.82rem", fontWeight: 800, color: tc }}>₹{((tx.amount || 0) / 100).toFixed(0)}</p>
+                  <p style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.5rem", color: lc, marginTop: 2 }}>
                     {new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · {new Date(tx.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-[0.5rem] font-bold uppercase px-1.5 py-0.5 border"
-                    style={{
-                      borderColor: tx.status === "CAPTURED" ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)",
-                      color: tx.status === "CAPTURED" ? "#22c55e" : "#ef4444",
-                    }}
-                  >
-                    {tx.status}
-                  </span>
-                  <button onClick={() => setSelectedTx(tx)} className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-[#ff6b47] hover:text-white transition-colors">
-                    Invoice
-                  </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <StatusBadge status={tx.status === "CAPTURED" ? "ACTIVE" : tx.status} />
                 </div>
               </div>
             ))}
@@ -952,77 +1088,89 @@ function KioskAnalytics({ kioskId }: { kioskId: string }) {
       </div>
 
       <AnimatePresence>
-        {selectedTx && (
-          <InvoiceModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
-        )}
+        {selectedTx && <InvoiceModal tx={selectedTx} onClose={() => setSelectedTx(null)} isDark={isDark} />}
       </AnimatePresence>
     </div>
   )
 }
 
-// ── Invoice Modal ─────────────────────────────────────────────────────────────
-function InvoiceModal({ tx, onClose }: { tx: any; onClose: () => void }) {
+// ── Invoice Modal ──────────────────────────────────────────────────────────────
+function InvoiceModal({ tx, onClose, isDark }: { tx: any; onClose: () => void; isDark: boolean }) {
+  const bm = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"
+  const lc = isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.38)"
+  const tc = isDark ? "#ffffff" : "#0a0a0a"
+
   const handleDownload = async () => {
     try {
       await generateInvoicePDF({
-        otp: tx.otp, // In case tx happens to have an otp
-        kioskId: tx.kioskId,
-        customerPhone: tx.customerPhone || "N/A",
+        otp: tx.otp, kioskId: tx.kioskId, customerPhone: tx.customerPhone || "N/A",
         totalAmount: (tx.amount || 0) / 100,
         queue: (tx.printDetails || []).map((p: any) => ({
-          fileName: p.fileName || "Document",
-          pagesToPrint: p.pageCount || 1,
-          printSettings: {
-            copies: p.copies || 1,
-            colorMode: p.colorMode || "bw",
-            doubleSided: "one-side"
-          },
+          fileName: p.fileName || "Document", pagesToPrint: p.pageCount || 1,
+          printSettings: { copies: p.copies || 1, colorMode: p.colorMode || "bw", doubleSided: "one-side" },
           cost: ((p.pageCount || 1) * (p.copies || 1) * (p.colorMode === "color" ? 10 : 2))
         }))
       })
-    } catch (e) {
-      console.error("PDF generation failed", e)
-      alert("Could not generate PDF invoice")
-    }
+    } catch { alert("Could not generate PDF invoice") }
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4 backdrop-blur-sm"
-      style={{ background: "rgba(0,0,0,0.85)" }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.95 }}
-        className="w-full max-w-[400px] border shadow-2xl"
-        style={{ background: "#050505", borderColor: "rgba(255,255,255,0.1)" }}
-        onClick={(e) => e.stopPropagation()}
+        initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+        style={{ width: "100%", maxWidth: 400, background: isDark ? "#050505" : "#fff", border: `1px solid ${bm}` }}
+        onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start p-6 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "20px 20px 16px", borderBottom: `1px solid ${bm}` }}>
           <div>
-            <p className="text-[0.55rem] uppercase tracking-[0.2em] mb-1" style={{ color: "#4a4a4a" }}>Invoice</p>
-            <h3 className="text-[0.85rem] font-bold uppercase leading-none" style={{ color: "#fff" }}>
-              {tx.transactionId}
-            </h3>
+            <p style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", color: lc, marginBottom: 5 }}>Invoice</p>
+            <h3 style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.9rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", color: tc }}>{tx.transactionId}</h3>
           </div>
-          <button onClick={onClose} className="text-[0.65rem] uppercase tracking-[0.15em] hover:text-white transition-colors" style={{ color: "#4a4a4a" }}>Close</button>
+          <button onClick={onClose} style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.52rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: lc, background: "none", border: "none", cursor: "pointer" }}>Close</button>
         </div>
-        <div className="p-6 text-[0.7rem]" style={{ color: "#a3a3a3" }}>
-          <div className="flex justify-between mb-2"><span>Date</span> <span className="text-white">{new Date(tx.createdAt).toLocaleString()}</span></div>
-          <div className="flex justify-between mb-2"><span>Amount</span> <span className="text-[#ff6b47] font-bold">₹{((tx.amount || 0) / 100).toFixed(2)}</span></div>
-          <div className="flex justify-between mb-2"><span>Status</span> <span className="text-white">{tx.status}</span></div>
-          <div className="flex justify-between mb-4"><span>Pages</span> <span className="text-white">{tx.totalPages}</span></div>
-          
-          <div className="border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-            <button onClick={handleDownload} className="w-full py-2 bg-[#ff6b47] text-black font-bold uppercase tracking-[0.1em] text-[0.6rem] hover:opacity-80 transition-all">Download Receipt</button>
-          </div>
+        <div style={{ padding: 20 }}>
+          {[["Date", new Date(tx.createdAt).toLocaleString()], ["Amount", `₹${((tx.amount || 0) / 100).toFixed(2)}`], ["Status", tx.status], ["Pages", tx.totalPages]].map(([l, v]) => (
+            <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${bm}` }}>
+              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: "0.52rem", color: lc, textTransform: "uppercase", letterSpacing: "0.12em" }}>{l}</span>
+              <span style={{ fontSize: "0.78rem", fontWeight: 600, color: l === "Amount" ? C.orange : l === "Status" && v === "CAPTURED" ? C.green : tc }}>{v}</span>
+            </div>
+          ))}
+          <button onClick={handleDownload} style={{ width: "100%", marginTop: 16, padding: "11px", background: C.orange, color: "#000", border: "none", cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em" }}>
+            Download Receipt
+          </button>
         </div>
       </motion.div>
     </motion.div>
   )
 }
+
+// ── Component Styles ──────────────────────────────────────────────────────────
+const rk_styles = `
+  .rk-row:hover { border-left: 2px solid ${C.orange} !important; }
+  .rk-icon-btn:hover { border-color: rgba(255,107,71,0.5) !important; color: ${C.orange} !important; }
+  .rk-copy-btn:hover { background: ${C.orange} !important; color: #000 !important; border-color: ${C.orange} !important; }
+  .rk-cert-btn:hover { background: ${C.orangeDim} !important; }
+  .rk-pdf-btn:hover { opacity: 0.8; }
+  .rk-nav-btn:hover { background: rgba(255,255,255,0.08) !important; }
+  .rk-inv-btn:hover { background: ${C.orange} !important; color: #000 !important; }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,107,71,0.3); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,107,71,0.6); }
+`

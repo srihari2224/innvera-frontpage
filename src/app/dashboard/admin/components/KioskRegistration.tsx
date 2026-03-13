@@ -39,12 +39,11 @@ const empty = (): FormData => ({
   password: "", confirmPassword: "",
 })
 
-// ── Proper controlled input field ──────────────────────────────────────────
 function Field({
-  label, value, onChange, placeholder = "", type = "text", hint, autoComplete, half,
+  label, value, onChange, placeholder = "", type = "text", hint, autoComplete,
 }: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; hint?: string; autoComplete?: string; half?: boolean;
+  placeholder?: string; type?: string; hint?: string; autoComplete?: string;
 }) {
   const [focused, setFocused] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
@@ -53,8 +52,8 @@ function Field({
     <div
       onClick={() => ref.current?.focus()}
       style={{
-        background: focused ? "rgba(255,107,71,0.05)" : "rgba(255,255,255,0.025)",
-        border: `1px solid ${focused ? "rgba(255,107,71,0.55)" : "rgba(255,255,255,0.1)"}`,
+        background: focused ? "rgba(255,107,71,0.05)" : "var(--field-bg)",
+        border: `1px solid ${focused ? "rgba(255,107,71,0.55)" : "var(--field-border)"}`,
         padding: "13px 16px 11px",
         cursor: "text",
         transition: "border-color 0.2s, background 0.2s",
@@ -66,7 +65,7 @@ function Field({
         fontFamily: "'Space Mono', monospace",
         fontSize: "0.5rem", fontWeight: 700,
         textTransform: "uppercase", letterSpacing: "0.22em",
-        color: focused ? "#ff6b47" : "rgba(255,255,255,0.3)",
+        color: focused ? "#ff6b47" : "var(--label-muted)",
         marginBottom: 7,
         transition: "color 0.2s",
         pointerEvents: "none",
@@ -90,7 +89,7 @@ function Field({
           fontFamily: "'Inter', sans-serif",
           fontSize: "0.95rem",
           fontWeight: 600,
-          color: "#ffffff",
+          color: "var(--text-primary)",
           caretColor: "#ff6b47",
           letterSpacing: "-0.01em",
           display: "block",
@@ -101,7 +100,7 @@ function Field({
           fontFamily: "'Space Mono', monospace",
           fontSize: "0.48rem", fontWeight: 700,
           letterSpacing: "0.16em", textTransform: "uppercase",
-          color: "rgba(255,255,255,0.16)", marginTop: 5,
+          color: "var(--label-muted)", marginTop: 5,
         }}>
           {hint}
         </p>
@@ -185,8 +184,8 @@ export default function KioskRegistration() {
         <h2 style={{ ...bigHead, fontSize: "clamp(1.8rem,4vw,2.8rem)", margin: "10px 0 18px" }}>
           Waiting for<br />Approval
         </h2>
-        <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.88rem", lineHeight: 1.8, maxWidth: 380, margin: "0 auto 36px" }}>
-          Approval request dispatched to <strong style={{ color: "#fff" }}>msrihari2224@gmail.com</strong>.
+        <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", lineHeight: 1.8, maxWidth: 380, margin: "0 auto 36px" }}>
+          Approval request dispatched to <strong style={{ color: "var(--text-primary)" }}>msrihari2224@gmail.com</strong>.
           Certificate sent to <strong style={{ color: "#ff6b47" }}>{form.ownerEmail}</strong> once approved.
         </p>
         <button onClick={resetForm} className="cta-btn" style={ctaBtn}>Register Another Kiosk</button>
@@ -207,19 +206,19 @@ export default function KioskRegistration() {
       <div style={mainCard}>
 
         {/* ── Step tabs ── */}
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
           {STEPS.map((s, i) => {
             const n = i + 1; const active = step === n; const done = step > n
             return (
               <div key={s.num} style={{
                 flex: 1, padding: "12px 8px",
-                borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : undefined,
+                borderRight: i < 3 ? "1px solid var(--border)" : undefined,
                 background: active ? "rgba(255,107,71,0.06)" : "transparent",
                 position: "relative", transition: "background 0.3s",
               }}>
                 {active && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "#ff6b47" }} />}
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.2em", color: active ? "#ff6b47" : done ? "#3a3a3a" : "#1e1e1e", marginBottom: 3 }}>{s.num}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: active ? "#fff" : done ? "#444" : "#1e1e1e" }}>{s.label}</div>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.2em", color: active ? "#ff6b47" : done ? "var(--step-done-num)" : "var(--step-idle-num)", marginBottom: 3 }}>{s.num}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: active ? "var(--text-primary)" : done ? "var(--step-done-label)" : "var(--step-idle-label)" }}>{s.label}</div>
               </div>
             )
           })}
@@ -252,24 +251,23 @@ export default function KioskRegistration() {
                   const sel = form.serviceType === opt.type
                   return (
                     <button key={opt.type} onClick={() => set("serviceType", opt.type)}
-                      className={`service-card ${sel ? "service-sel" : ""}`}
                       style={{
                         padding: "22px 20px 20px", textAlign: "left",
-                        border: `1px solid ${sel ? "#ff6b47" : "rgba(255,255,255,0.08)"}`,
-                        background: sel ? "rgba(255,107,71,0.07)" : "rgba(255,255,255,0.02)",
-                        cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+                        border: `1px solid ${sel ? "#ff6b47" : "var(--card-border)"}`,
+                        background: sel ? "rgba(255,107,71,0.07)" : "var(--card-bg)",
+                        cursor: "pointer",
                         fontFamily: "'Inter', sans-serif", width: "100%",
                         position: "relative", overflow: "hidden",
                       }}>
                       {sel && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "#ff6b47" }} />}
-                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: sel ? "#ff6b47" : "rgba(255,255,255,0.25)", marginBottom: 9 }}>{opt.tag}</div>
-                      <div style={{ fontSize: "1.05rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: sel ? "#fff" : "rgba(255,255,255,0.5)", lineHeight: 1.1, marginBottom: 4 }}>{opt.title}</div>
-                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: sel ? "rgba(255,107,71,0.8)" : "rgba(255,255,255,0.2)", marginBottom: 12 }}>{opt.subtitle}</div>
-                      <p style={{ fontSize: "0.74rem", color: sel ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.28)", lineHeight: 1.65, marginBottom: 14 }}>{opt.desc}</p>
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: sel ? "#ff6b47" : "var(--label-muted)", marginBottom: 9 }}>{opt.tag}</div>
+                      <div style={{ fontSize: "1.05rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: sel ? "var(--text-primary)" : "var(--text-secondary)", lineHeight: 1.1, marginBottom: 4 }}>{opt.title}</div>
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: sel ? "rgba(255,107,71,0.8)" : "var(--label-muted)", marginBottom: 12 }}>{opt.subtitle}</div>
+                      <p style={{ fontSize: "0.74rem", color: sel ? "var(--text-muted)" : "var(--label-muted)", lineHeight: 1.65, marginBottom: 14 }}>{opt.desc}</p>
                       {opt.points.map(b => (
                         <div key={b} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                          <div style={{ width: 4, height: 4, background: sel ? "#ff6b47" : "rgba(255,255,255,0.15)", flexShrink: 0 }} />
-                          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: sel ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}>{b}</span>
+                          <div style={{ width: 4, height: 4, background: sel ? "#ff6b47" : "var(--bullet-idle)", flexShrink: 0 }} />
+                          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: sel ? "var(--text-muted)" : "var(--label-muted)" }}>{b}</span>
                         </div>
                       ))}
                     </button>
@@ -291,9 +289,9 @@ export default function KioskRegistration() {
                   const sel = form.kioskType === opt.type
                   return (
                     <div key={opt.type} style={{
-                      border: `1px solid ${sel ? "#ff6b47" : "rgba(255,255,255,0.08)"}`,
-                      background: sel ? "rgba(255,107,71,0.04)" : "rgba(255,255,255,0.015)",
-                      transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
+                      border: `1px solid ${sel ? "#ff6b47" : "var(--card-border)"}`,
+                      background: sel ? "rgba(255,107,71,0.04)" : "var(--card-bg)",
+                      transition: "border-color 0.25s, background 0.25s",
                       overflow: "hidden",
                       position: "relative",
                     }}>
@@ -305,7 +303,7 @@ export default function KioskRegistration() {
                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                           <div style={{
                             width: 20, height: 20, flexShrink: 0,
-                            border: `1.5px solid ${sel ? "#ff6b47" : "rgba(255,255,255,0.2)"}`,
+                            border: `1.5px solid ${sel ? "#ff6b47" : "var(--checkbox-border)"}`,
                             background: sel ? "#ff6b47" : "transparent",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             transition: "all 0.2s",
@@ -313,11 +311,11 @@ export default function KioskRegistration() {
                             {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="square"><polyline points="20 6 9 17 4 12" /></svg>}
                           </div>
                           <div>
-                            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: sel ? "#ff6b47" : "rgba(255,255,255,0.25)", marginBottom: 3 }}>{opt.tag}</div>
-                            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: sel ? "#fff" : "rgba(255,255,255,0.45)", transition: "color 0.2s" }}>{opt.type}</div>
+                            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: sel ? "#ff6b47" : "var(--label-muted)", marginBottom: 3 }}>{opt.tag}</div>
+                            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: sel ? "var(--text-primary)" : "var(--text-secondary)", transition: "color 0.2s" }}>{opt.type}</div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: sel ? "rgba(255,107,71,0.6)" : "rgba(255,255,255,0.2)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: sel ? "rgba(255,107,71,0.6)" : "var(--label-muted)" }}>
                           {sel ? "Configured" : "Select"}
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"
                             style={{ transform: sel ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)" }}>
@@ -328,7 +326,7 @@ export default function KioskRegistration() {
 
                       {sel && (
                         <div style={{ padding: "4px 22px 22px", borderTop: "1px solid rgba(255,107,71,0.12)", animation: "slideDown 0.25s cubic-bezier(0.4,0,0.2,1) both" }}>
-                          <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.38)", lineHeight: 1.65, margin: "14px 0 18px" }}>{opt.desc}</p>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", lineHeight: 1.65, margin: "14px 0 18px" }}>{opt.desc}</p>
                           <div style={{ display: "grid", gridTemplateColumns: opt.type === "DX-Series" ? "1fr 1fr" : "1fr 1fr", gap: 10 }}>
                             <CapacityInput
                               label="Printer 1 — Paper Capacity"
@@ -357,9 +355,9 @@ export default function KioskRegistration() {
               <Field label="CPU Password" value={form.cpuPassword} onChange={v => set("cpuPassword", v)} type="password" placeholder="Device access password" hint="Used to build the SSH command" />
 
               {form.cpuUsername && form.ipAddress && (
-                <div style={{ marginTop: 12, padding: "11px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: 14, animation: "slideDown 0.2s ease both" }}>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>SSH</span>
-                  <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
+                <div style={{ marginTop: 12, padding: "11px 16px", background: "var(--ssh-bg)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 14, animation: "slideDown 0.2s ease both" }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--label-muted)", flexShrink: 0 }}>SSH</span>
+                  <div style={{ width: 1, height: 14, background: "var(--border)" }} />
                   <code style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", color: "#ff6b47", fontWeight: 700 }}>ssh {form.cpuUsername}@{form.ipAddress}</code>
                 </div>
               )}
@@ -415,19 +413,19 @@ export default function KioskRegistration() {
                   { label: "Address", value: form.address },
                   { label: "Location", value: `${form.lat}, ${form.lng}` },
                 ].map(({ label, value }) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", gap: 20 }}>
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", flexShrink: 0 }}>{label}</span>
-                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: "rgba(255,255,255,0.7)", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "62%" }}>{value || "—"}</span>
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 0", borderBottom: "1px solid var(--border)", gap: 20 }}>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--label-muted)", flexShrink: 0 }}>{label}</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "62%" }}>{value || "—"}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ padding: "12px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 14 }}>
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", marginBottom: 7 }}>SSH Command</div>
+              <div style={{ padding: "12px 16px", background: "var(--ssh-bg)", border: "1px solid var(--border)", marginBottom: 14 }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--label-muted)", marginBottom: 7 }}>SSH Command</div>
                 <code style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", color: "#ff6b47", fontWeight: 700 }}>ssh {form.cpuUsername}@{form.ipAddress}</code>
               </div>
               <div style={{ padding: "14px 16px", borderLeft: "2px solid #ff6b47", background: "rgba(255,107,71,0.06)" }}>
-                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: 0 }}>
-                  Submitting sends approval to <strong style={{ color: "#fff" }}>msrihari2224@gmail.com</strong>. Certificate goes to <strong style={{ color: "#ff6b47" }}>{form.ownerEmail}</strong> once approved.
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
+                  Submitting sends approval to <strong style={{ color: "var(--text-primary)" }}>msrihari2224@gmail.com</strong>. Certificate goes to <strong style={{ color: "#ff6b47" }}>{form.ownerEmail}</strong> once approved.
                 </p>
               </div>
             </div>
@@ -442,22 +440,22 @@ export default function KioskRegistration() {
         </div>
 
         {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 36px", borderTop: "1px solid rgba(255,255,255,0.07)", background: "#030303" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 36px", borderTop: "1px solid var(--border)", background: "var(--footer-bg)" }}>
           {step > 1 ? (
-            <button onClick={goBack} className="back-btn" style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: "8px 0", transition: "color 0.2s" }}>
+            <button onClick={goBack} className="back-btn" style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--label-muted)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: "8px 0", transition: "color 0.2s" }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Back
             </button>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
               <div style={{ width: 5, height: 5, background: "#ff6b47", animation: "blink 2s ease-in-out infinite" }} />
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.18)" }}>Step {step} of 4</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--label-muted)" }}>Step {step} of 4</span>
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
               {[1, 2, 3, 4].map(n => (
-                <div key={n} style={{ height: 3, width: n === step ? 20 : 4, background: n === step ? "#ff6b47" : n < step ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)", transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" }} />
+                <div key={n} style={{ height: 3, width: n === step ? 20 : 4, background: n === step ? "#ff6b47" : n < step ? "var(--progress-done)" : "var(--progress-idle)", transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" }} />
               ))}
             </div>
             {step < 4 ? (
@@ -466,7 +464,7 @@ export default function KioskRegistration() {
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
             ) : (
-              <button onClick={handleSubmit} disabled={loading} className={loading ? "" : "cta-btn"} style={{ ...ctaBtn, background: loading ? "#111" : "#ff6b47", color: loading ? "rgba(255,255,255,0.3)" : "#000", borderColor: loading ? "rgba(255,255,255,0.07)" : "#ff6b47", cursor: loading ? "not-allowed" : "pointer" }}>
+              <button onClick={handleSubmit} disabled={loading} className={loading ? "" : "cta-btn"} style={{ ...ctaBtn, background: loading ? "var(--btn-loading-bg)" : "#ff6b47", color: loading ? "var(--btn-loading-text)" : "#000", borderColor: loading ? "var(--border)" : "#ff6b47", cursor: loading ? "not-allowed" : "pointer" }}>
                 {loading ? (
                   <><span style={{ width: 11, height: 11, border: "2px solid rgba(255,255,255,0.12)", borderTopColor: "rgba(255,255,255,0.45)", borderRadius: "50%", display: "inline-block", animation: "spin 0.8s linear infinite" }} /> Submitting</>
                 ) : (
@@ -485,8 +483,8 @@ export default function KioskRegistration() {
 function SectionDivider({ label }: { label: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0 14px" }}>
-      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--label-muted)", flexShrink: 0 }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
     </div>
   )
 }
@@ -495,29 +493,121 @@ function CapacityInput({ label, value, onChange }: { label: string; value: strin
   const [focused, setFocused] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
   return (
-    <div onClick={() => ref.current?.focus()} style={{ background: focused ? "rgba(255,107,71,0.06)" : "rgba(255,255,255,0.03)", border: `1px solid ${focused ? "rgba(255,107,71,0.5)" : "rgba(255,255,255,0.1)"}`, padding: "11px 14px 10px", cursor: "text", transition: "all 0.2s" }}>
-      <label style={{ display: "block", fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: focused ? "#ff6b47" : "rgba(255,255,255,0.28)", marginBottom: 6, transition: "color 0.2s", pointerEvents: "none" }}>{label}</label>
+    <div onClick={() => ref.current?.focus()} style={{ background: focused ? "rgba(255,107,71,0.06)" : "var(--field-bg)", border: `1px solid ${focused ? "rgba(255,107,71,0.5)" : "var(--field-border)"}`, padding: "11px 14px 10px", cursor: "text", transition: "all 0.2s" }}>
+      <label style={{ display: "block", fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: focused ? "#ff6b47" : "var(--label-muted)", marginBottom: 6, transition: "color 0.2s", pointerEvents: "none" }}>{label}</label>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <input ref={ref} type="number" value={value} onChange={e => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder="e.g. 250" style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontFamily: "'Inter', sans-serif", fontSize: "0.92rem", fontWeight: 600, color: "#fff", caretColor: "#ff6b47" }} />
-        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>sheets</span>
+        <input ref={ref} type="number" value={value} onChange={e => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder="e.g. 250" style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontFamily: "'Inter', sans-serif", fontSize: "0.92rem", fontWeight: 600, color: "var(--text-primary)", caretColor: "#ff6b47" }} />
+        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--label-muted)", flexShrink: 0 }}>sheets</span>
       </div>
     </div>
   )
 }
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
-const wrap: React.CSSProperties = { minHeight: "100vh", background: "#000000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 20px", fontFamily: "'Inter', sans-serif", color: "#ffffff" }
-const mainCard: React.CSSProperties = { width: "100%", maxWidth: 760, background: "#050505", border: "1px solid rgba(255,255,255,0.08)" }
-const bigHead: React.CSSProperties = { fontFamily: "'Inter', sans-serif", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.04em", lineHeight: 0.92, color: "#ffffff", margin: 0 }
-const monoTag: React.CSSProperties = { fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "#ff6b47" }
-const desc: React.CSSProperties = { fontFamily: "'Space Mono', monospace", fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 22 }
-const ctaBtn: React.CSSProperties = { fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", background: "#ff6b47", color: "#000", border: "1px solid #ff6b47", padding: "12px 22px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }
+const wrap: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "var(--page-bg)",
+  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+  padding: "48px 20px",
+  fontFamily: "'Inter', sans-serif",
+  color: "var(--text-primary)",
+}
+const mainCard: React.CSSProperties = {
+  width: "100%", maxWidth: 760,
+  background: "var(--card-surface)",
+  border: "1px solid var(--border)",
+}
+const bigHead: React.CSSProperties = {
+  fontFamily: "'Inter', sans-serif", fontWeight: 900,
+  textTransform: "uppercase", letterSpacing: "-0.04em",
+  lineHeight: 0.92, color: "var(--text-primary)", margin: 0,
+}
+const monoTag: React.CSSProperties = {
+  fontFamily: "'Space Mono', monospace", fontSize: "0.52rem",
+  fontWeight: 700, letterSpacing: "0.3em",
+  textTransform: "uppercase", color: "#ff6b47",
+}
+const desc: React.CSSProperties = {
+  fontFamily: "'Space Mono', monospace", fontSize: "0.56rem",
+  fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase",
+  color: "var(--label-muted)", marginBottom: 22,
+}
+const ctaBtn: React.CSSProperties = {
+  fontFamily: "'Inter', sans-serif", fontWeight: 800,
+  fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase",
+  background: "#ff6b47", color: "#000",
+  border: "1px solid #ff6b47",
+  padding: "12px 22px", cursor: "pointer",
+  display: "flex", alignItems: "center", gap: 8,
+  transition: "all 0.2s",
+}
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap');
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   ::selection { background: #ff6b47; color: #000; }
+
+  /* ── Dark theme (default) ── */
+  :root,
+  [data-theme="dark"] {
+    --page-bg: #000000;
+    --card-surface: #050505;
+    --footer-bg: #030303;
+    --border: rgba(255,255,255,0.08);
+    --field-bg: rgba(255,255,255,0.025);
+    --field-border: rgba(255,255,255,0.1);
+    --card-bg: rgba(255,255,255,0.02);
+    --card-border: rgba(255,255,255,0.08);
+    --ssh-bg: rgba(255,255,255,0.02);
+    --checkbox-border: rgba(255,255,255,0.2);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255,255,255,0.5);
+    --text-muted: rgba(255,255,255,0.45);
+    --label-muted: rgba(255,255,255,0.25);
+    --bullet-idle: rgba(255,255,255,0.15);
+    --step-done-num: #3a3a3a;
+    --step-done-label: #444;
+    --step-idle-num: #1e1e1e;
+    --step-idle-label: #1e1e1e;
+    --progress-done: rgba(255,255,255,0.22);
+    --progress-idle: rgba(255,255,255,0.07);
+    --btn-loading-bg: #111;
+    --btn-loading-text: rgba(255,255,255,0.3);
+  }
+
+  /* ── Light theme ── */
+  [data-theme="light"] {
+    --page-bg: #f5f5f5;
+    --card-surface: #ffffff;
+    --footer-bg: #fafafa;
+    --border: rgba(0,0,0,0.1);
+    --field-bg: rgba(0,0,0,0.03);
+    --field-border: rgba(0,0,0,0.12);
+    --card-bg: rgba(0,0,0,0.02);
+    --card-border: rgba(0,0,0,0.1);
+    --ssh-bg: rgba(0,0,0,0.03);
+    --checkbox-border: rgba(0,0,0,0.25);
+    --text-primary: #0a0a0a;
+    --text-secondary: rgba(0,0,0,0.55);
+    --text-muted: rgba(0,0,0,0.45);
+    --label-muted: rgba(0,0,0,0.35);
+    --bullet-idle: rgba(0,0,0,0.18);
+    --step-done-num: #c0c0c0;
+    --step-done-label: #b0b0b0;
+    --step-idle-num: #d4d4d4;
+    --step-idle-label: #d4d4d4;
+    --progress-done: rgba(0,0,0,0.25);
+    --progress-idle: rgba(0,0,0,0.1);
+    --btn-loading-bg: #e8e8e8;
+    --btn-loading-text: rgba(0,0,0,0.3);
+  }
+
+  /* Input placeholder colors per theme */
+  [data-theme="dark"] input::placeholder { color: rgba(255,255,255,0.16) !important; font-family: 'Inter', sans-serif; font-weight: 400; }
+  [data-theme="light"] input::placeholder { color: rgba(0,0,0,0.2) !important; font-family: 'Inter', sans-serif; font-weight: 400; }
   input::placeholder { color: rgba(255,255,255,0.16) !important; font-family: 'Inter', sans-serif; font-weight: 400; }
+
   input[type=number]::-webkit-inner-spin-button,
   input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
@@ -529,8 +619,10 @@ const styles = `
     to   { opacity:1; transform:translateY(0); }
   }
 
+  /* CTA button: only color change, no transform/movement */
   .cta-btn:hover { background: #e05c3a !important; border-color: #e05c3a !important; }
-  .cta-btn:active { transform: scale(0.97); }
-  .back-btn:hover { color: rgba(255,255,255,0.75) !important; }
-  .service-card:hover:not(.service-sel) { border-color: rgba(255,255,255,0.2) !important; background: rgba(255,255,255,0.04) !important; transform: translateY(-2px); }
+  .cta-btn:active { opacity: 0.85; }
+
+  /* Back button: only color change */
+  .back-btn:hover { color: var(--text-secondary) !important; }
 `
