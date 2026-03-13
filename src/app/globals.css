@@ -204,3 +204,54 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Global Light Mode Overrides ── */
+body[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #000000;
+}
+
+body[data-theme="light"],
+body[data-theme="light"] .bg-black {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body[data-theme="light"] .text-white {
+  color: #000000 !important;
+}
+
+body[data-theme="light"] [style*="background: #050505"],
+body[data-theme="light"] [style*="background: rgb(5, 5, 5)"] {
+  background-color: #f9f9f9 !important;
+}
+
+body[data-theme="light"] [style*="border-color: rgba(255,255,255,0.08)"],
+body[data-theme="light"] [style*="border-color: rgba(255, 255, 255, 0.08)"],
+body[data-theme="light"] [style*="border-color: rgba(255,255,255,0.1)"],
+body[data-theme="light"] [style*="border-color: rgba(255, 255, 255, 0.1)"],
+body[data-theme="light"] [style*="border-color: rgba(255,255,255,0.2)"],
+body[data-theme="light"] [style*="borderColor: rgba(255,255,255,0.1)"] {
+  border-color: rgba(0,0,0,0.1) !important;
+}
+
+body[data-theme="light"] [style*="background: rgba(255,255,255,0.05)"],
+body[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.05)"],
+body[data-theme="light"] .bg-white\/5 {
+  background-color: rgba(0,0,0,0.05) !important;
+}
+
+body[data-theme="light"] [style*="color: #fff"],
+body[data-theme="light"] [style*="color: #ffffff"],
+body[data-theme="light"] [style*="color: rgb(255, 255, 255)"] {
+  color: #000000 !important;
+}
+
+body[data-theme="light"] .noise-overlay {
+  opacity: 0.02 !important;
+  filter: invert(1);
+}
+
+body[data-theme="light"] .vertical-grid-line {
+  background-color: rgba(0,0,0,0.05) !important;
+}

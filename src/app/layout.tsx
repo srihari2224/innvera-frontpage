@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 import VisualEditsMessenger from "../visual-edits/VisualEditsMessenger";
 import ErrorReporter from "@/components/ErrorReporter";
-import LoadingScreen from "@/components/LoadingScreen";
 import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Innvera - A Transmedia Documentary",
   description: "Innvera is a transmedia documentary that uncovers humanity's hidden capacity to tackle the climate crisis.",
+  verification: {
+    google: "-DsIIiNB0oIFFyT1oBOrvfYDBrZlibTPCT5eP5lBtIE",
+  },
 };
 
 export default function RootLayout({
@@ -36,7 +38,6 @@ export default function RootLayout({
           data-custom-data='{"appName": "YourApp", "version": "1.0.0", "greeting": "hi"}'
         />
         {children}
-        <LoadingScreen />
         <VisualEditsMessenger />
       </body>
     </html>
