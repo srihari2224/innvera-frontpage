@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 
 const KIOSK_BACKEND = "https://kiosk-backend-t1mi.onrender.com"
 
@@ -23,41 +23,105 @@ interface FormData {
   confirmPassword: string
 }
 
-const STEPS = ["Service Type", "Kiosk Hardware", "Owner Details", "Confirm"]
+const STEPS = [
+  { num: "01", label: "Service" },
+  { num: "02", label: "Hardware" },
+  { num: "03", label: "Owner" },
+  { num: "04", label: "Confirm" },
+]
 
-const emptyForm = (): FormData => ({
-  serviceType: "",
-  kioskType: "",
-  ipAddress: "",
-  cpuUsername: "",
-  cpuPassword: "",
-  printer1Capacity: "",
-  printer2Capacity: "",
-  kioskId: "",
-  ownerName: "",
-  ownerPhone: "",
-  ownerEmail: "",
-  address: "",
-  lat: "",
-  lng: "",
-  password: "",
-  confirmPassword: "",
+const empty = (): FormData => ({
+  serviceType: "", kioskType: "",
+  ipAddress: "", cpuUsername: "", cpuPassword: "",
+  printer1Capacity: "", printer2Capacity: "",
+  kioskId: "", ownerName: "", ownerPhone: "", ownerEmail: "",
+  address: "", lat: "", lng: "",
+  password: "", confirmPassword: "",
 })
+
+// ── Proper controlled input field ──────────────────────────────────────────
+function Field({
+  label, value, onChange, placeholder = "", type = "text", hint, autoComplete, half,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; type?: string; hint?: string; autoComplete?: string; half?: boolean;
+}) {
+  const [focused, setFocused] = useState(false)
+  const ref = useRef<HTMLInputElement>(null)
+
+  return (
+    <div
+      onClick={() => ref.current?.focus()}
+      style={{
+        background: focused ? "rgba(255,107,71,0.05)" : "rgba(255,255,255,0.025)",
+        border: `1px solid ${focused ? "rgba(255,107,71,0.55)" : "rgba(255,255,255,0.1)"}`,
+        padding: "13px 16px 11px",
+        cursor: "text",
+        transition: "border-color 0.2s, background 0.2s",
+        marginBottom: 10,
+      }}
+    >
+      <label style={{
+        display: "block",
+        fontFamily: "'Space Mono', monospace",
+        fontSize: "0.5rem", fontWeight: 700,
+        textTransform: "uppercase", letterSpacing: "0.22em",
+        color: focused ? "#ff6b47" : "rgba(255,255,255,0.3)",
+        marginBottom: 7,
+        transition: "color 0.2s",
+        pointerEvents: "none",
+      }}>
+        {label}
+      </label>
+      <input
+        ref={ref}
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder={placeholder}
+        autoComplete={autoComplete || (type === "password" ? "new-password" : "off")}
+        style={{
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          outline: "none",
+          fontFamily: "'Inter', sans-serif",
+          fontSize: "0.95rem",
+          fontWeight: 600,
+          color: "#ffffff",
+          caretColor: "#ff6b47",
+          letterSpacing: "-0.01em",
+          display: "block",
+        }}
+      />
+      {hint && (
+        <p style={{
+          fontFamily: "'Space Mono', monospace",
+          fontSize: "0.48rem", fontWeight: 700,
+          letterSpacing: "0.16em", textTransform: "uppercase",
+          color: "rgba(255,255,255,0.16)", marginTop: 5,
+        }}>
+          {hint}
+        </p>
+      )}
+    </div>
+  )
+}
 
 export default function KioskRegistration() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
-  const [form, setForm] = useState<FormData>(emptyForm())
+  const [form, setForm] = useState<FormData>(empty())
 
   const set = (field: keyof FormData, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }))
+    setForm(prev => ({ ...prev, [field]: value }))
 
-  const validateStep = (): string => {
-    if (step === 1) {
-      if (!form.serviceType) return "Please select a service type."
-    }
+  const validate = (): string => {
+    if (step === 1 && !form.serviceType) return "Please select a service type."
     if (step === 2) {
       if (!form.kioskType) return "Please select a kiosk type."
       if (!form.ipAddress.trim()) return "IP Address is required."
@@ -69,216 +133,145 @@ export default function KioskRegistration() {
     }
     if (step === 3) {
       if (!form.kioskId.trim()) return "Kiosk ID is required."
-      if (!/^[a-zA-Z0-9_-]+$/.test(form.kioskId))
-        return "Kiosk ID: letters, numbers, dash and underscore only."
+      if (!/^[a-zA-Z0-9_-]+$/.test(form.kioskId)) return "Kiosk ID: letters, numbers, dash, underscore only."
       if (!form.ownerName.trim()) return "Owner name is required."
       if (!form.ownerPhone.trim()) return "Phone number is required."
-      if (!form.ownerEmail.trim() || !form.ownerEmail.includes("@"))
-        return "Enter a valid Gmail address."
+      if (!form.ownerEmail.trim() || !form.ownerEmail.includes("@")) return "Enter a valid email address."
       if (!form.address.trim()) return "Address is required."
       if (!form.lat.trim() || !form.lng.trim()) return "Latitude and longitude are required."
-      if (isNaN(parseFloat(form.lat)) || isNaN(parseFloat(form.lng)))
-        return "Latitude and longitude must be valid numbers."
-      if (!form.password || form.password.length < 6)
-        return "Password must be at least 6 characters."
+      if (isNaN(parseFloat(form.lat)) || isNaN(parseFloat(form.lng))) return "Lat/Lng must be valid numbers."
+      if (!form.password || form.password.length < 6) return "Password must be at least 6 characters."
       if (form.password !== form.confirmPassword) return "Passwords do not match."
     }
     return ""
   }
 
-  const goNext = () => {
-    const err = validateStep()
-    if (err) { setError(err); return }
-    setError("")
-    setStep((s) => s + 1)
-  }
-
-  const goBack = () => {
-    setError("")
-    setStep((s) => s - 1)
-  }
-
-  const resetForm = () => {
-    setForm(emptyForm())
-    setStep(1)
-    setError("")
-    setSuccess(false)
-  }
+  const goNext = () => { const e = validate(); if (e) { setError(e); return; } setError(""); setStep(s => s + 1) }
+  const goBack = () => { setError(""); setStep(s => s - 1) }
+  const resetForm = () => { setForm(empty()); setStep(1); setError(""); setSuccess(false) }
 
   const handleSubmit = async () => {
-    const err = validateStep()
-    if (err) { setError(err); return }
-    setLoading(true)
-    setError("")
-
+    const e = validate(); if (e) { setError(e); return; }
+    setLoading(true); setError("")
     try {
       const body = {
-        username: form.kioskId.trim(),
-        password: form.password,
-        kioskType: form.kioskType,
-        serviceType: form.serviceType,
-        ipAddress: form.ipAddress.trim(),
-        cpuUsername: form.cpuUsername.trim(),
-        cpuPassword: form.cpuPassword,
-        printer1Capacity: form.printer1Capacity,
+        username: form.kioskId.trim(), password: form.password,
+        kioskType: form.kioskType, serviceType: form.serviceType,
+        ipAddress: form.ipAddress.trim(), cpuUsername: form.cpuUsername.trim(),
+        cpuPassword: form.cpuPassword, printer1Capacity: form.printer1Capacity,
         printer2Capacity: form.kioskType === "DX-Series" ? form.printer2Capacity : undefined,
-        ownerName: form.ownerName.trim(),
-        ownerPhone: form.ownerPhone.trim(),
-        ownerEmail: form.ownerEmail.trim(),
-        address: form.address.trim(),
-        lat: form.lat.trim(),
-        lng: form.lng.trim(),
+        ownerName: form.ownerName.trim(), ownerPhone: form.ownerPhone.trim(),
+        ownerEmail: form.ownerEmail.trim(), address: form.address.trim(),
+        lat: form.lat.trim(), lng: form.lng.trim(),
       }
-
       const res = await fetch(`${KIOSK_BACKEND}/api/kiosk/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       })
-
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || "Registration failed")
       setSuccess(true)
-    } catch (e: any) {
-      setError(e.message || "Registration failed. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+    } catch (e: any) { setError(e.message || "Registration failed.") }
+    finally { setLoading(false) }
   }
 
-  /* ── Reusable Input Field ── */
-  const Field = ({
-    label, value, onChange, placeholder = "", type = "text", hint,
-  }: {
-    label: string; value: string; onChange: (v: string) => void;
-    placeholder?: string; type?: string; hint?: string;
-  }) => (
-    <div className="border-t border-white/10 pt-4 pb-3">
-      <label className="block text-[0.6rem] uppercase tracking-[0.2em] font-semibold text-[#a3a3a3] mb-1">
-        {label}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={type === "password" ? "new-password" : "off"}
-        className="w-full bg-transparent text-white text-[1rem] font-medium outline-none placeholder:text-[#333]"
-        style={{ caretColor: "#ff6b47" }}
-      />
-      {hint && <p className="text-[#555] text-[0.6rem] mt-1 uppercase tracking-wider">{hint}</p>}
+  if (success) return (
+    <div style={wrap}>
+      <style>{styles}</style>
+      <div style={{ ...mainCard, textAlign: "center", padding: "64px 52px" }}>
+        <div style={{ width: 58, height: 58, background: "#ff6b47", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="square"><polyline points="20 6 9 17 4 12" /></svg>
+        </div>
+        <div style={monoTag}>Registration Submitted</div>
+        <h2 style={{ ...bigHead, fontSize: "clamp(1.8rem,4vw,2.8rem)", margin: "10px 0 18px" }}>
+          Waiting for<br />Approval
+        </h2>
+        <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.88rem", lineHeight: 1.8, maxWidth: 380, margin: "0 auto 36px" }}>
+          Approval request dispatched to <strong style={{ color: "#fff" }}>msrihari2224@gmail.com</strong>.
+          Certificate sent to <strong style={{ color: "#ff6b47" }}>{form.ownerEmail}</strong> once approved.
+        </p>
+        <button onClick={resetForm} className="cta-btn" style={ctaBtn}>Register Another Kiosk</button>
+      </div>
     </div>
   )
 
-  /* ── Success panel ── */
-  if (success) {
-    return (
-      <div className="max-w-[680px]" style={{ fontFamily: '"Inter", sans-serif' }}>
-        <div className="border border-white/10 p-10 text-center" style={{ background: "#050505" }}>
-          <div
-            className="w-14 h-14 mx-auto mb-6 flex items-center justify-center text-2xl font-black"
-            style={{ background: "#ff6b47", color: "#000" }}
-          >
-            ✓
-          </div>
-          <p className="text-[0.6rem] uppercase tracking-[0.3em] text-[#ff6b47] mb-3">
-            Registration Submitted
-          </p>
-          <h2 className="text-[2rem] font-black uppercase tracking-tighter leading-none mb-4">
-            Waiting for<br />Approval
-          </h2>
-          <p className="text-[#a3a3a3] text-[0.85rem] leading-relaxed max-w-[360px] mx-auto">
-            An approval request has been dispatched to <strong className="text-white">msrihari2224@gmail.com</strong>. Once approved, the owner will receive their registration certificate at <strong className="text-[#ff6b47]">{form.ownerEmail}</strong>.
-          </p>
-          <button
-            onClick={resetForm}
-            className="mt-8 px-6 py-3 text-[0.65rem] font-black uppercase tracking-[0.2em] transition-all hover:opacity-80"
-            style={{ background: "#ff6b47", color: "#000" }}
-          >
-            Register Another Kiosk
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="max-w-[680px]" style={{ fontFamily: '"Inter", sans-serif' }}>
-      {/* ── Header ── */}
-      <div className="mb-1">
-        <p className="text-[0.55rem] uppercase tracking-[0.3em] text-[#ff6b47] mb-1">Admin Panel</p>
-        <h1 className="text-[2rem] font-black uppercase tracking-tighter leading-none mb-6">
-          Register Kiosk
-        </h1>
+    <div style={wrap}>
+      <style>{styles}</style>
+
+      {/* Page title */}
+      <div style={{ width: "100%", maxWidth: 760, marginBottom: 24 }}>
+        <div style={monoTag}>Admin Panel</div>
+        <h1 style={{ ...bigHead, fontSize: "clamp(2rem,4vw,3rem)", marginTop: 8 }}>Register Kiosk</h1>
       </div>
 
-      <div className="border border-white/10" style={{ background: "#050505" }}>
-        {/* ── Step indicator ── */}
-        <div className="flex border-b border-white/10">
-          {STEPS.map((label, i) => {
-            const num = i + 1
-            const active = step === num
-            const done = step > num
+      <div style={mainCard}>
+
+        {/* ── Step tabs ── */}
+        <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          {STEPS.map((s, i) => {
+            const n = i + 1; const active = step === n; const done = step > n
             return (
-              <div
-                key={label}
-                className="flex-1 px-3 py-3 text-center"
-                style={{
-                  borderRight: i < STEPS.length - 1 ? "1px solid rgba(255,255,255,0.06)" : undefined,
-                  background: active ? "rgba(255,107,71,0.06)" : "transparent",
-                }}
-              >
-                <div
-                  className="text-[0.5rem] font-black uppercase tracking-[0.2em]"
-                  style={{ color: active ? "#ff6b47" : done ? "#4a4a4a" : "#2a2a2a" }}
-                >
-                  {String(num).padStart(2, "0")}
-                </div>
-                <div
-                  className="text-[0.55rem] uppercase tracking-[0.08em] mt-0.5 hidden sm:block"
-                  style={{ color: active ? "#ffffff" : done ? "#555" : "#2a2a2a" }}
-                >
-                  {label}
-                </div>
+              <div key={s.num} style={{
+                flex: 1, padding: "12px 8px",
+                borderRight: i < 3 ? "1px solid rgba(255,255,255,0.06)" : undefined,
+                background: active ? "rgba(255,107,71,0.06)" : "transparent",
+                position: "relative", transition: "background 0.3s",
+              }}>
+                {active && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "#ff6b47" }} />}
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.2em", color: active ? "#ff6b47" : done ? "#3a3a3a" : "#1e1e1e", marginBottom: 3 }}>{s.num}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: active ? "#fff" : done ? "#444" : "#1e1e1e" }}>{s.label}</div>
               </div>
             )
           })}
         </div>
 
-        {/* ── Form body ── */}
-        <div className="px-8 py-7">
+        {/* ── Body ── */}
+        <div style={{ padding: "30px 36px" }}>
 
-          {/* STEP 1 — Service Type */}
+          {/* STEP 1 */}
           {step === 1 && (
             <div>
-              <p className="text-[0.65rem] uppercase tracking-[0.25em] text-[#a3a3a3] mb-6">
-                Select the service model for this kiosk.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                {(["KSS", "MKS"] as const).map((type) => {
-                  const labels: Record<string, string> = {
-                    KSS: "Kiosk Sale Services",
-                    MKS: "Managed Kiosk Services",
-                  }
-                  const selected = form.serviceType === type
+              <p style={desc}>Choose how this kiosk will be managed.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  {
+                    type: "KSS" as const, tag: "KSS — Kiosk Sale Service",
+                    title: "Owner-Operated",
+                    subtitle: "Buy once, operate independently",
+                    desc: "Owner purchases the hardware outright. Full ownership — the owner operates and retains all revenue with no ongoing Innvera involvement.",
+                    points: ["One-time hardware purchase", "Owner retains full revenue", "Self-operated independently"],
+                  },
+                  {
+                    type: "MKS" as const, tag: "MKS — Managed Kiosk Service",
+                    title: "Innvera-Managed",
+                    subtitle: "Full service, no hardware cost",
+                    desc: "Innvera provides the kiosk and manages operations end-to-end as a service to companies. No upfront cost, Innvera handles everything.",
+                    points: ["No upfront hardware cost", "Innvera manages operations", "Service-as-a-subscription"],
+                  },
+                ].map(opt => {
+                  const sel = form.serviceType === opt.type
                   return (
-                    <button
-                      key={type}
-                      onClick={() => set("serviceType", type)}
-                      className="p-6 text-left transition-all border"
+                    <button key={opt.type} onClick={() => set("serviceType", opt.type)}
+                      className={`service-card ${sel ? "service-sel" : ""}`}
                       style={{
-                        borderColor: selected ? "#ff6b47" : "rgba(255,255,255,0.08)",
-                        background: selected ? "rgba(255,107,71,0.08)" : "transparent",
-                      }}
-                    >
-                      <div className="text-[0.55rem] uppercase tracking-[0.25em] mb-2 font-black"
-                        style={{ color: selected ? "#ff6b47" : "#555" }}>
-                        {type}
-                      </div>
-                      <div className="text-[1rem] font-black uppercase tracking-tight leading-tight"
-                        style={{ color: selected ? "#ffffff" : "#a3a3a3" }}>
-                        {labels[type]}
-                      </div>
+                        padding: "22px 20px 20px", textAlign: "left",
+                        border: `1px solid ${sel ? "#ff6b47" : "rgba(255,255,255,0.08)"}`,
+                        background: sel ? "rgba(255,107,71,0.07)" : "rgba(255,255,255,0.02)",
+                        cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+                        fontFamily: "'Inter', sans-serif", width: "100%",
+                        position: "relative", overflow: "hidden",
+                      }}>
+                      {sel && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "#ff6b47" }} />}
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: sel ? "#ff6b47" : "rgba(255,255,255,0.25)", marginBottom: 9 }}>{opt.tag}</div>
+                      <div style={{ fontSize: "1.05rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: sel ? "#fff" : "rgba(255,255,255,0.5)", lineHeight: 1.1, marginBottom: 4 }}>{opt.title}</div>
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: sel ? "rgba(255,107,71,0.8)" : "rgba(255,255,255,0.2)", marginBottom: 12 }}>{opt.subtitle}</div>
+                      <p style={{ fontSize: "0.74rem", color: sel ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.28)", lineHeight: 1.65, marginBottom: 14 }}>{opt.desc}</p>
+                      {opt.points.map(b => (
+                        <div key={b} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                          <div style={{ width: 4, height: 4, background: sel ? "#ff6b47" : "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+                          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: sel ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}>{b}</span>
+                        </div>
+                      ))}
                     </button>
                   )
                 })}
@@ -286,187 +279,258 @@ export default function KioskRegistration() {
             </div>
           )}
 
-          {/* STEP 2 — Kiosk Type + Hardware */}
+          {/* STEP 2 */}
           {step === 2 && (
             <div>
-              <p className="text-[0.65rem] uppercase tracking-[0.25em] text-[#a3a3a3] mb-6">
-                Select hardware type and enter access details.
-              </p>
-
-              <div className="grid grid-cols-2 gap-4 mb-2">
-                {(["SX-Series", "DX-Series"] as const).map((type) => {
-                  const selected = form.kioskType === type
+              <p style={desc}>Select hardware model — click to expand and configure.</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                {[
+                  { type: "SX-Series" as const, tag: "Single Printer", desc: "Standard kiosk with one printer. Ideal for moderate-volume locations and general use." },
+                  { type: "DX-Series" as const, tag: "Dual Printer", desc: "High-capacity kiosk with two independent printers. Built for busy locations with high print demand." },
+                ].map(opt => {
+                  const sel = form.kioskType === opt.type
                   return (
-                    <button
-                      key={type}
-                      onClick={() => {
-                        set("kioskType", type)
-                        if (type === "SX-Series") set("printer2Capacity", "")
-                      }}
-                      className="p-5 text-left border transition-all"
-                      style={{
-                        borderColor: selected ? "#ff6b47" : "rgba(255,255,255,0.08)",
-                        background: selected ? "rgba(255,107,71,0.08)" : "transparent",
-                      }}
-                    >
-                      <div className="text-[0.55rem] uppercase tracking-[0.25em] mb-1 font-black"
-                        style={{ color: selected ? "#ff6b47" : "#555" }}>
-                        {type === "SX-Series" ? "Single Printer" : "Dual Printer"}
-                      </div>
-                      <div className="text-[1.1rem] font-black uppercase tracking-tight"
-                        style={{ color: selected ? "#fff" : "#a3a3a3" }}>
-                        {type}
-                      </div>
-                    </button>
+                    <div key={opt.type} style={{
+                      border: `1px solid ${sel ? "#ff6b47" : "rgba(255,255,255,0.08)"}`,
+                      background: sel ? "rgba(255,107,71,0.04)" : "rgba(255,255,255,0.015)",
+                      transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
+                      overflow: "hidden",
+                      position: "relative",
+                    }}>
+                      {sel && <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 2, background: "#ff6b47" }} />}
+                      <button
+                        onClick={() => { set("kioskType", opt.type); if (opt.type === "SX-Series") set("printer2Capacity", "") }}
+                        style={{ width: "100%", padding: "16px 20px 16px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                          <div style={{
+                            width: 20, height: 20, flexShrink: 0,
+                            border: `1.5px solid ${sel ? "#ff6b47" : "rgba(255,255,255,0.2)"}`,
+                            background: sel ? "#ff6b47" : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            transition: "all 0.2s",
+                          }}>
+                            {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="square"><polyline points="20 6 9 17 4 12" /></svg>}
+                          </div>
+                          <div>
+                            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: sel ? "#ff6b47" : "rgba(255,255,255,0.25)", marginBottom: 3 }}>{opt.tag}</div>
+                            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.95rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: sel ? "#fff" : "rgba(255,255,255,0.45)", transition: "color 0.2s" }}>{opt.type}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: sel ? "rgba(255,107,71,0.6)" : "rgba(255,255,255,0.2)" }}>
+                          {sel ? "Configured" : "Select"}
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"
+                            style={{ transform: sel ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)" }}>
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </div>
+                      </button>
+
+                      {sel && (
+                        <div style={{ padding: "4px 22px 22px", borderTop: "1px solid rgba(255,107,71,0.12)", animation: "slideDown 0.25s cubic-bezier(0.4,0,0.2,1) both" }}>
+                          <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.38)", lineHeight: 1.65, margin: "14px 0 18px" }}>{opt.desc}</p>
+                          <div style={{ display: "grid", gridTemplateColumns: opt.type === "DX-Series" ? "1fr 1fr" : "1fr 1fr", gap: 10 }}>
+                            <CapacityInput
+                              label="Printer 1 — Paper Capacity"
+                              value={form.printer1Capacity}
+                              onChange={v => set("printer1Capacity", v)}
+                            />
+                            {opt.type === "DX-Series" && (
+                              <CapacityInput
+                                label="Printer 2 — Paper Capacity"
+                                value={form.printer2Capacity}
+                                onChange={v => set("printer2Capacity", v)}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>
 
-              <Field label="IP Address" value={form.ipAddress} onChange={(v) => set("ipAddress", v)} placeholder="192.168.1.100" hint="SSH IP of the kiosk device" />
-              <Field label="CPU Username" value={form.cpuUsername} onChange={(v) => set("cpuUsername", v)} placeholder="innvera-printit-01" />
-              <Field label="CPU Password" value={form.cpuPassword} onChange={(v) => set("cpuPassword", v)} placeholder="device password" hint="Plain text — used to frame the SSH command" />
-
-              {form.kioskType && (
-                <>
-                  <Field
-                    label="Printer 1 Paper Capacity"
-                    type="number"
-                    value={form.printer1Capacity}
-                    onChange={(v) => set("printer1Capacity", v)}
-                    placeholder="e.g. 250"
-                    hint="Total sheet capacity of Printer 1"
-                  />
-                  {form.kioskType === "DX-Series" && (
-                    <Field
-                      label="Printer 2 Paper Capacity"
-                      type="number"
-                      value={form.printer2Capacity}
-                      onChange={(v) => set("printer2Capacity", v)}
-                      placeholder="e.g. 250"
-                      hint="Total sheet capacity of Printer 2"
-                    />
-                  )}
-                </>
-              )}
+              {/* Access section */}
+              <SectionDivider label="Access Configuration" />
+              <Field label="IP Address" value={form.ipAddress} onChange={v => set("ipAddress", v)} placeholder="192.168.1.100" hint="SSH IP address of the kiosk device" />
+              <Field label="CPU Username" value={form.cpuUsername} onChange={v => set("cpuUsername", v)} placeholder="innvera-printit-01" />
+              <Field label="CPU Password" value={form.cpuPassword} onChange={v => set("cpuPassword", v)} type="password" placeholder="Device access password" hint="Used to build the SSH command" />
 
               {form.cpuUsername && form.ipAddress && (
-                <div className="mt-4 p-3 border border-white/10 flex items-center gap-3" style={{ background: "#0a0a0a" }}>
-                  <span className="text-[0.55rem] uppercase tracking-[0.2em] text-[#555]">SSH Preview</span>
-                  <code className="text-[0.75rem] text-[#ff6b47] font-mono">
-                    ssh {form.cpuUsername}@{form.ipAddress}
-                  </code>
+                <div style={{ marginTop: 12, padding: "11px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: 14, animation: "slideDown 0.2s ease both" }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>SSH</span>
+                  <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
+                  <code style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", color: "#ff6b47", fontWeight: 700 }}>ssh {form.cpuUsername}@{form.ipAddress}</code>
                 </div>
               )}
             </div>
           )}
 
-          {/* STEP 3 — Owner Details */}
+          {/* STEP 3 */}
           {step === 3 && (
             <div>
-              <p className="text-[0.65rem] uppercase tracking-[0.25em] text-[#a3a3a3] mb-4">
-                Enter owner and location information.
-              </p>
-              <Field label="Kiosk ID (Login Username)" value={form.kioskId} onChange={(v) => set("kioskId", v)} placeholder="america" hint="Alphanumeric only — used as login ID and kiosk identifier" />
-              <Field label="Owner Name" value={form.ownerName} onChange={(v) => set("ownerName", v)} placeholder="Full name" />
-              <Field label="Phone Number" value={form.ownerPhone} onChange={(v) => set("ownerPhone", v)} placeholder="+91 9000000000" type="tel" />
-              <Field label="Gmail" value={form.ownerEmail} onChange={(v) => set("ownerEmail", v)} placeholder="owner@gmail.com" type="email" hint="Certificate and approval emails will be sent here" />
-              <Field label="Address" value={form.address} onChange={(v) => set("address", v)} placeholder="Full physical address" />
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Latitude" value={form.lat} onChange={(v) => set("lat", v)} placeholder="17.3850" type="number" />
-                <Field label="Longitude" value={form.lng} onChange={(v) => set("lng", v)} placeholder="78.4867" type="number" />
+              <p style={desc}>Enter owner contact and location details.</p>
+              <SectionDivider label="Kiosk Identity" />
+              <Field label="Kiosk ID (Login Username)" value={form.kioskId} onChange={v => set("kioskId", v)} placeholder="e.g. mumbai-01" hint="Letters, numbers, dash, underscore only — becomes the login ID" />
+
+              <SectionDivider label="Owner Information" />
+              <Field label="Owner Full Name" value={form.ownerName} onChange={v => set("ownerName", v)} placeholder="e.g. Ravi Kumar" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <Field label="Phone Number" value={form.ownerPhone} onChange={v => set("ownerPhone", v)} placeholder="+91 9000000000" type="tel" />
+                <Field label="Email Address" value={form.ownerEmail} onChange={v => set("ownerEmail", v)} placeholder="owner@gmail.com" type="email" hint="Certificate will be sent here" />
               </div>
-              <Field label="Password" value={form.password} onChange={(v) => set("password", v)} placeholder="Min. 6 characters" type="password" />
-              <Field label="Confirm Password" value={form.confirmPassword} onChange={(v) => set("confirmPassword", v)} placeholder="Re-enter password" type="password" />
+
+              <SectionDivider label="Location" />
+              <Field label="Physical Address" value={form.address} onChange={v => set("address", v)} placeholder="Full address including city and state" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <Field label="Latitude" value={form.lat} onChange={v => set("lat", v)} placeholder="17.3850" type="number" />
+                <Field label="Longitude" value={form.lng} onChange={v => set("lng", v)} placeholder="78.4867" type="number" />
+              </div>
+
+              <SectionDivider label="Security" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <Field label="Password" value={form.password} onChange={v => set("password", v)} placeholder="Min. 6 characters" type="password" autoComplete="new-password" />
+                <Field label="Confirm Password" value={form.confirmPassword} onChange={v => set("confirmPassword", v)} placeholder="Re-enter password" type="password" autoComplete="new-password" />
+              </div>
             </div>
           )}
 
-          {/* STEP 4 — Confirmation Summary */}
+          {/* STEP 4 */}
           {step === 4 && (
             <div>
-              <p className="text-[0.65rem] uppercase tracking-[0.25em] text-[#a3a3a3] mb-6">
-                Review all details before submitting.
-              </p>
-
-              {[
-                { label: "Service Type", value: form.serviceType },
-                { label: "Kiosk Type", value: form.kioskType },
-                { label: "IP Address", value: form.ipAddress },
-                { label: "CPU Username", value: form.cpuUsername },
-                { label: "CPU Password", value: "*".repeat(form.cpuPassword.length) },
-                { label: "Printer 1 Capacity", value: `${form.printer1Capacity} sheets` },
-                ...(form.kioskType === "DX-Series" ? [{ label: "Printer 2 Capacity", value: `${form.printer2Capacity} sheets` }] : []),
-                { label: "Kiosk ID", value: form.kioskId },
-                { label: "Owner Name", value: form.ownerName },
-                { label: "Phone", value: form.ownerPhone },
-                { label: "Gmail", value: form.ownerEmail },
-                { label: "Address", value: form.address },
-                { label: "Location", value: `${form.lat}, ${form.lng}` },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center py-2 border-b border-white/5">
-                  <span className="text-[0.6rem] uppercase tracking-[0.2em] text-[#555]">{label}</span>
-                  <span className="text-[0.8rem] text-[#a3a3a3] font-medium text-right max-w-[60%] truncate">{value || "-"}</span>
-                </div>
-              ))}
-
-              <div className="mt-6 p-4 border border-white/10" style={{ background: "#0a0a0a" }}>
-                <p className="text-[0.6rem] uppercase tracking-[0.2em] text-[#555] mb-1">SSH Command</p>
-                <code className="text-[0.75rem] text-[#ff6b47] font-mono">
-                  ssh {form.cpuUsername}@{form.ipAddress}
-                </code>
+              <p style={desc}>Review all details before submitting.</p>
+              <div style={{ marginBottom: 20 }}>
+                {[
+                  { label: "Service Type", value: form.serviceType },
+                  { label: "Kiosk Type", value: form.kioskType },
+                  { label: "IP Address", value: form.ipAddress },
+                  { label: "CPU Username", value: form.cpuUsername },
+                  { label: "CPU Password", value: "•".repeat(form.cpuPassword.length) },
+                  { label: "Printer 1 Capacity", value: `${form.printer1Capacity} sheets` },
+                  ...(form.kioskType === "DX-Series" ? [{ label: "Printer 2 Capacity", value: `${form.printer2Capacity} sheets` }] : []),
+                  { label: "Kiosk ID", value: form.kioskId },
+                  { label: "Owner Name", value: form.ownerName },
+                  { label: "Phone", value: form.ownerPhone },
+                  { label: "Email", value: form.ownerEmail },
+                  { label: "Address", value: form.address },
+                  { label: "Location", value: `${form.lat}, ${form.lng}` },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", gap: 20 }}>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", flexShrink: 0 }}>{label}</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: "rgba(255,255,255,0.7)", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "62%" }}>{value || "—"}</span>
+                  </div>
+                ))}
               </div>
-
-              <div className="mt-4 p-4 border-l-2 border-[#ff6b47]" style={{ background: "rgba(255,107,71,0.05)" }}>
-                <p className="text-[0.65rem] text-[#a3a3a3] leading-relaxed">
-                  Submitting will send an approval request + PDF certificate to{" "}
-                  <strong className="text-white">msrihari2224@gmail.com</strong>.{" "}
-                  Once approved, the owner gets their certificate at{" "}
-                  <strong className="text-[#ff6b47]">{form.ownerEmail}</strong>.
+              <div style={{ padding: "12px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 14 }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", marginBottom: 7 }}>SSH Command</div>
+                <code style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", color: "#ff6b47", fontWeight: 700 }}>ssh {form.cpuUsername}@{form.ipAddress}</code>
+              </div>
+              <div style={{ padding: "14px 16px", borderLeft: "2px solid #ff6b47", background: "rgba(255,107,71,0.06)" }}>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: 0 }}>
+                  Submitting sends approval to <strong style={{ color: "#fff" }}>msrihari2224@gmail.com</strong>. Certificate goes to <strong style={{ color: "#ff6b47" }}>{form.ownerEmail}</strong> once approved.
                 </p>
               </div>
             </div>
           )}
 
-          {/* Error */}
           {error && (
-            <div className="mt-5 p-3 border border-[rgba(255,107,71,0.3)]" style={{ background: "rgba(255,107,71,0.05)" }}>
-              <p className="text-[0.7rem] text-[#ff6b47] uppercase tracking-[0.15em]">{error}</p>
+            <div style={{ marginTop: 18, padding: "12px 16px", border: "1px solid rgba(255,107,71,0.35)", background: "rgba(255,107,71,0.07)", display: "flex", alignItems: "flex-start", gap: 10, animation: "slideDown 0.2s ease both" }}>
+              <div style={{ width: 5, height: 5, background: "#ff6b47", flexShrink: 0, marginTop: 3 }} />
+              <p style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff6b47", margin: 0 }}>{error}</p>
             </div>
           )}
         </div>
 
-        {/* ── Footer navigation ── */}
-        <div className="flex justify-between items-center px-8 py-5 border-t border-white/10" style={{ background: "#030303" }}>
+        {/* Footer */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 36px", borderTop: "1px solid rgba(255,255,255,0.07)", background: "#030303" }}>
           {step > 1 ? (
-            <button
-              onClick={goBack}
-              className="text-[0.65rem] uppercase tracking-[0.2em] font-bold text-[#555] hover:text-white transition-colors"
-            >
+            <button onClick={goBack} className="back-btn" style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: "8px 0", transition: "color 0.2s" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Back
             </button>
           ) : (
-            <div />
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <div style={{ width: 5, height: 5, background: "#ff6b47", animation: "blink 2s ease-in-out infinite" }} />
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.18)" }}>Step {step} of 4</span>
+            </div>
           )}
-
-          {step < 4 ? (
-            <button
-              onClick={goNext}
-              className="px-7 py-3 text-[0.65rem] font-black uppercase tracking-[0.2em] transition-all hover:opacity-80"
-              style={{ background: "#ff6b47", color: "#000" }}
-            >
-              Next Step
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-8 py-3 text-[0.65rem] font-black uppercase tracking-[0.2em] transition-all hover:opacity-80 disabled:opacity-40"
-              style={{ background: loading ? "#555" : "#ff6b47", color: "#000" }}
-            >
-              {loading ? "Submitting..." : "Confirm Registration"}
-            </button>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {[1, 2, 3, 4].map(n => (
+                <div key={n} style={{ height: 3, width: n === step ? 20 : 4, background: n === step ? "#ff6b47" : n < step ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)", transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" }} />
+              ))}
+            </div>
+            {step < 4 ? (
+              <button onClick={goNext} className="cta-btn" style={ctaBtn}>
+                Next Step
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </button>
+            ) : (
+              <button onClick={handleSubmit} disabled={loading} className={loading ? "" : "cta-btn"} style={{ ...ctaBtn, background: loading ? "#111" : "#ff6b47", color: loading ? "rgba(255,255,255,0.3)" : "#000", borderColor: loading ? "rgba(255,255,255,0.07)" : "#ff6b47", cursor: loading ? "not-allowed" : "pointer" }}>
+                {loading ? (
+                  <><span style={{ width: 11, height: 11, border: "2px solid rgba(255,255,255,0.12)", borderTopColor: "rgba(255,255,255,0.45)", borderRadius: "50%", display: "inline-block", animation: "spin 0.8s linear infinite" }} /> Submitting</>
+                ) : (
+                  <>Confirm<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square"><polyline points="20 6 9 17 4 12" /></svg></>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0 14px" }}>
+      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+    </div>
+  )
+}
+
+function CapacityInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [focused, setFocused] = useState(false)
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div onClick={() => ref.current?.focus()} style={{ background: focused ? "rgba(255,107,71,0.06)" : "rgba(255,255,255,0.03)", border: `1px solid ${focused ? "rgba(255,107,71,0.5)" : "rgba(255,255,255,0.1)"}`, padding: "11px 14px 10px", cursor: "text", transition: "all 0.2s" }}>
+      <label style={{ display: "block", fontFamily: "'Space Mono', monospace", fontSize: "0.48rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: focused ? "#ff6b47" : "rgba(255,255,255,0.28)", marginBottom: 6, transition: "color 0.2s", pointerEvents: "none" }}>{label}</label>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <input ref={ref} type="number" value={value} onChange={e => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder="e.g. 250" style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontFamily: "'Inter', sans-serif", fontSize: "0.92rem", fontWeight: 600, color: "#fff", caretColor: "#ff6b47" }} />
+        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>sheets</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Shared styles ─────────────────────────────────────────────────────────────
+const wrap: React.CSSProperties = { minHeight: "100vh", background: "#000000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 20px", fontFamily: "'Inter', sans-serif", color: "#ffffff" }
+const mainCard: React.CSSProperties = { width: "100%", maxWidth: 760, background: "#050505", border: "1px solid rgba(255,255,255,0.08)" }
+const bigHead: React.CSSProperties = { fontFamily: "'Inter', sans-serif", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.04em", lineHeight: 0.92, color: "#ffffff", margin: 0 }
+const monoTag: React.CSSProperties = { fontFamily: "'Space Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "#ff6b47" }
+const desc: React.CSSProperties = { fontFamily: "'Space Mono', monospace", fontSize: "0.56rem", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 22 }
+const ctaBtn: React.CSSProperties = { fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", background: "#ff6b47", color: "#000", border: "1px solid #ff6b47", padding: "12px 22px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  ::selection { background: #ff6b47; color: #000; }
+  input::placeholder { color: rgba(255,255,255,0.16) !important; font-family: 'Inter', sans-serif; font-weight: 400; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+  @keyframes slideDown {
+    from { opacity:0; transform:translateY(-8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .cta-btn:hover { background: #e05c3a !important; border-color: #e05c3a !important; }
+  .cta-btn:active { transform: scale(0.97); }
+  .back-btn:hover { color: rgba(255,255,255,0.75) !important; }
+  .service-card:hover:not(.service-sel) { border-color: rgba(255,255,255,0.2) !important; background: rgba(255,255,255,0.04) !important; transform: translateY(-2px); }
+`

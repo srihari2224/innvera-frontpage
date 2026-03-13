@@ -68,19 +68,24 @@ function OwnerDashboardContent() {
 
   useEffect(() => {
     try {
+      const isIframe = searchParams.get("iframe") === "true"
       const auth = localStorage.getItem("innvera-auth")
-      if (!auth) {
+      
+      let parsed = null
+      let role = null
+      let sKioskId = null
+      
+      if (auth) {
+        parsed = JSON.parse(auth)
+        setSession(parsed)
+        role = parsed.role
+        sKioskId = parsed.kioskId
+      } else if (!isIframe) {
         router.push("/sign-in")
         return
       }
-      
-      const parsed = JSON.parse(auth)
-      setSession(parsed)
-      
-      const role = parsed.role
-      const sKioskId = parsed.kioskId
 
-      if (role === "owner" && kioskIdFromUrl && sKioskId !== kioskIdFromUrl) {
+      if (role === "owner" && kioskIdFromUrl && sKioskId !== kioskIdFromUrl && !isIframe) {
         setError("You do not have access to this kiosk dashboard.")
         setLoading(false)
         return
@@ -114,7 +119,7 @@ function OwnerDashboardContent() {
     } catch {
       router.push("/sign-in")
     }
-  }, [router, kioskIdFromUrl])
+  }, [router, kioskIdFromUrl, searchParams])
 
   // Filter & Stats logic
   const filterByPeriod = (txs: Transaction[]) => {
