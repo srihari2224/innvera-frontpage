@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Innvera - A Transmedia Documentary",
   description: "Innvera is a transmedia documentary that uncovers humanity's hidden capacity to tackle the climate crisis.",
   verification: {
-    google: "-DsIIiNB0oIFFyT1oBOrvfYDBrZlibTPCT5eP5lBtIE",
+    google: "EuLEtNV6SyX7fnzn6vwGK1NFPZH6xNTeGMHarZl7PO0",
   },
 };
 

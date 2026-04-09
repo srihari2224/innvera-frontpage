@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import KioskRegistration from "@/app/dashboard/admin/components/KioskRegistration"
 import RegisteredKiosks from "@/app/dashboard/admin/components/RegisteredKiosks"
 import AdminAnalytics from "@/app/dashboard/admin/components/AdminAnalytics"
+import KioskLiveStatus from "@/app/dashboard/admin/components/KioskLiveStatus"
 
 const NAV_ITEMS = [
   { id: "registration", label: "Kiosk Registration", num: "01" },
-  { id: "kiosks", label: "Registered Kiosks", num: "02" },
-  { id: "analytics", label: "Analytics & Revenue", num: "03" },
+  { id: "kiosks",       label: "Registered Kiosks",  num: "02" },
+  { id: "analytics",   label: "Analytics & Revenue", num: "03" },
+  { id: "livestatus",  label: "Live Status",          num: "04" },
 ]
 
 export default function AdminDashboard() {
@@ -233,6 +235,11 @@ export default function AdminDashboard() {
                 <AdminAnalytics />
               </motion.div>
             )}
+            {active === "livestatus" && (
+              <motion.div key="livestatus" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                <KioskLiveStatus />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>
@@ -316,6 +323,15 @@ function SidebarContent({
                 {item.id === "analytics" && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square">
                     <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" />
+                  </svg>
+                )}
+                {item.id === "livestatus" && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M6.3 6.3a8 8 0 0 0 0 11.4" />
+                    <path d="M17.7 6.3a8 8 0 0 1 0 11.4" />
+                    <path d="M3.5 3.5a13 13 0 0 0 0 17" />
+                    <path d="M20.5 3.5a13 13 0 0 1 0 17" />
                   </svg>
                 )}
               </span>
