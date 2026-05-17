@@ -1,0 +1,792 @@
+
+<h2 class="sr-only">Innvera Technology Website Content & Asset Guide — complete section-by-section content replacement with copy and asset directions</h2>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.guide { padding: 0 0 3rem; }
+
+.top-bar {
+  background: #0f1923;
+  color: #fff;
+  padding: 1.5rem 1.5rem 1rem;
+  border-radius: var(--border-radius-lg);
+  margin-bottom: 1.5rem;
+}
+.top-bar h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+.top-bar p { font-size: 13px; color: rgba(255,255,255,0.5); }
+.top-bar .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: 0.5px solid rgba(255,255,255,0.2); }
+.badge.hot { background: #1A3C6E22; color: #60a5fa; border-color: #60a5fa44; }
+
+.toc {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+.toc-item {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  transition: all 0.15s;
+  text-align: center;
+  line-height: 1.3;
+}
+.toc-item:hover { border-color: var(--color-border-primary); color: var(--color-text-primary); background: var(--color-background-primary); }
+.toc-num { display: block; font-size: 10px; color: var(--color-text-tertiary); margin-bottom: 2px; }
+
+.section-card {
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  background: var(--color-background-primary);
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--color-background-secondary);
+  border-bottom: 0.5px solid transparent;
+  transition: border-color 0.2s;
+}
+.section-header:hover { background: var(--color-background-primary); }
+.section-header.open { border-bottom-color: var(--color-border-tertiary); }
+.section-icon {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.section-meta { flex: 1; }
+.section-file { font-size: 11px; color: var(--color-text-tertiary); font-family: var(--font-mono); }
+.section-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.section-caret { font-size: 12px; color: var(--color-text-tertiary); transition: transform 0.2s; }
+.section-caret.open { transform: rotate(90deg); }
+
+.section-body { padding: 16px; display: none; }
+.section-body.open { display: block; }
+
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+.tag-change { background: #fef3c7; color: #92400e; }
+.tag-file { background: #dbeafe; color: #1e40af; }
+.tag-asset { background: #d1fae5; color: #065f46; }
+.tag-new { background: #ede9fe; color: #5b21b6; }
+
+.sub-section { margin-bottom: 20px; }
+.sub-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+
+.copy-block {
+  background: var(--color-background-tertiary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  margin-bottom: 8px;
+  position: relative;
+}
+.copy-block .label {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  display: block;
+  margin-bottom: 6px;
+}
+.copy-block .text {
+  font-style: italic;
+  color: var(--color-text-primary);
+}
+.copy-block .text strong { font-style: normal; font-weight: 500; }
+
+.copy-btn {
+  position: absolute;
+  top: 8px; right: 8px;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover { background: var(--color-background-secondary); }
+.copy-btn.copied { color: #065f46; border-color: #6ee7b7; background: #d1fae5; }
+
+.asset-box {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-left: 3px solid #10b981;
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.asset-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.asset-content { flex: 1; }
+.asset-title { font-weight: 500; color: var(--color-text-primary); font-size: 13px; }
+.asset-desc { color: var(--color-text-secondary); font-size: 12px; margin-top: 3px; line-height: 1.5; }
+.asset-spec { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; }
+
+.change-box {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.old-text { color: #ef4444; text-decoration: line-through; font-size: 12px; font-family: var(--font-mono); }
+.new-text { color: #10b981; font-size: 12px; font-family: var(--font-mono); }
+.arrow { color: var(--color-text-tertiary); font-size: 12px; }
+
+.info-box {
+  background: #eff6ff;
+  border: 0.5px solid #bfdbfe;
+  border-radius: var(--border-radius-md);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #1e40af;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 16px 0; }
+</style>
+
+<div class="guide">
+
+<div class="top-bar">
+  <h1>Innvera Technology — Website Content Guide</h1>
+  <p>Complete section-by-section content replacement for innvera-frontpage</p>
+  <div class="badges">
+    <span class="badge">9 sections covered</span>
+    <span class="badge">Full copywriting</span>
+    <span class="badge hot">Asset directions included</span>
+    <span class="badge">File paths mapped</span>
+  </div>
+</div>
+
+<div class="toc">
+  <div class="toc-item" onclick="toggleSection('layout')"><span class="toc-num">layout.tsx</span>SEO & Meta</div>
+  <div class="toc-item" onclick="toggleSection('header')"><span class="toc-num">Header.tsx</span>Navigation</div>
+  <div class="toc-item" onclick="toggleSection('hero')"><span class="toc-num">Hero.tsx</span>Hero Section</div>
+  <div class="toc-item" onclick="toggleSection('blur')"><span class="toc-num">BlurSentence.tsx</span>Tagline Strip</div>
+  <div class="toc-item" onclick="toggleSection('about')"><span class="toc-num">AboutNarrative.tsx</span>About Us</div>
+  <div class="toc-item" onclick="toggleSection('orange')"><span class="toc-num">OrangeStatement.tsx</span>Bold Statement</div>
+  <div class="toc-item" onclick="toggleSection('impact')"><span class="toc-num">ImpactProjects.tsx</span>Products/Models</div>
+  <div class="toc-item" onclick="toggleSection('podcast')"><span class="toc-num">PodcastSection.tsx</span>Contact/CTA</div>
+  <div class="toc-item" onclick="toggleSection('footer')"><span class="toc-num">Footer.tsx</span>Footer</div>
+</div>
+
+<!-- LAYOUT / META -->
+<div class="section-card" id="card-layout">
+  <div class="section-header" onclick="toggleSection('layout')">
+    <div class="section-icon" style="background:#f0f9ff;">🔍</div>
+    <div class="section-meta">
+      <div class="section-file">src/app/layout.tsx</div>
+      <div class="section-title">SEO Metadata & Page Title</div>
+    </div>
+    <span class="section-caret" id="caret-layout">▶</span>
+  </div>
+  <div class="section-body" id="body-layout">
+    <span class="tag tag-change">Replace content</span>
+    <div class="sub-section">
+      <div class="sub-title">Exact changes to make</div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">"Innvera - A Transmedia Documentary"</div>
+          <div class="arrow">↓ change to</div>
+          <div class="new-text">"Innvera Technology — Smart Campus Printing Solutions"</div>
+        </div>
+      </div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">"Innvera is a transmedia documentary that uncovers..."</div>
+          <div class="arrow">↓ change to</div>
+          <div class="new-text">"Innvera Technology builds smart cloud-based printing kiosks for colleges and universities across India. PrintIT — 24/7 self-service printing, zero staff required."</div>
+        </div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="sub-section">
+      <div class="sub-title">Also add these meta tags inside the metadata object</div>
+      <div class="copy-block">
+        <span class="label">Add to metadata in layout.tsx</span>
+        <div class="text">keywords: "college printing kiosk, campus printing, cloud printing, self-service printing, PrintIT, smart campus, Andhra Pradesh, India"<br><br>openGraph: {'{'}title: "PrintIT by Innvera Technology", description: "Smart cloud-based printing kiosks for campuses.", url: "https://innveratechnology.com"{'}'}</div>
+        <button class="copy-btn" onclick="copyText(this, 'keywords: college printing kiosk, campus printing, PrintIT, smart campus, Andhra Pradesh')">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="section-card" id="card-header">
+  <div class="section-header" onclick="toggleSection('header')">
+    <div class="section-icon" style="background:#f0fdf4;">🧭</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/Header.tsx</div>
+      <div class="section-title">Navigation Menu</div>
+    </div>
+    <span class="section-caret" id="caret-header">▶</span>
+  </div>
+  <div class="section-body" id="body-header">
+    <span class="tag tag-change">Replace nav links</span>
+    <div class="info-box">The logo animation (double-layer "Innvera" text) is perfect — keep it. The mix-blend-difference effect looks great on your dark hero. Only the nav links need updating.</div>
+    <div class="sub-section">
+      <div class="sub-title">Replace the 3 nav items with these</div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">href="/the-project" → "The project"</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">href="/printit" → "PrintIT"</div>
+        </div>
+      </div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">href="/impact-in-action" → "Impact in Action"</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">href="/models" → "Our Models"</div>
+        </div>
+      </div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">href="/sign-in" → "Sign In"</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">href="/contact" → "Contact Us" (styled as a subtle button)</div>
+        </div>
+      </div>
+    </div>
+    <div class="asset-box">
+      <div class="asset-icon">📐</div>
+      <div class="asset-content">
+        <div class="asset-title">Asset idea: Company logo SVG</div>
+        <div class="asset-desc">Replace the text-only logo with a proper SVG logomark next to "Innvera". A simple geometric mark — for example, an abstract "I" or kiosk silhouette — placed 8px to the left of the text. Keep the white color + mix-blend-difference so it works on both light and dark.</div>
+        <div class="asset-spec">Size: 28×28px SVG · Color: white (inherits blend mode)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="section-card" id="card-hero">
+  <div class="section-header" onclick="toggleSection('hero')">
+    <div class="section-icon" style="background:#fdf4ff;">🎬</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/Hero.tsx</div>
+      <div class="section-title">Hero — Full Screen Opening</div>
+    </div>
+    <span class="section-caret" id="caret-hero">▶</span>
+  </div>
+  <div class="section-body" id="body-hero">
+    <span class="tag tag-asset">Asset-heavy section</span>
+    <div class="info-box">The scroll animation (parallelogram reveal), INNVERA text animation, and the overall structure are all excellent — keep everything. Only replace the video and the small handwritten tagline SVG at the bottom.</div>
+
+    <div class="sub-section">
+      <div class="sub-title">Video: /public/assets/videos/intro.mp4</div>
+      <div class="asset-box">
+        <div class="asset-icon">🎥</div>
+        <div class="asset-content">
+          <div class="asset-title">Hero background video — most important asset</div>
+          <div class="asset-desc">Film a 15–30 second looping video of someone using the PrintIT kiosk: person walks up, takes out phone, uploads a document, the kiosk prints, they collect papers and walk away. Shoot at night or in a dark corridor — this makes the black background of the hero look intentional and cinematic. No audio needed (muted autoplay). If you don't have the kiosk yet, shoot a person using a touchscreen in a dark room — any screen works as a placeholder.</div>
+          <div class="asset-spec">Format: .mp4 (H.264) · Dimensions: 1920×1080 or 1080×1920 (portrait also works with object-cover) · File size: under 8MB · Loop seamlessly</div>
+        </div>
+      </div>
+      <div class="asset-box">
+        <div class="asset-icon">🖼</div>
+        <div class="asset-content">
+          <div class="asset-title">Alternative if no video yet: dark abstract background</div>
+          <div class="asset-desc">Replace the &lt;video&gt; tag with a Next.js &lt;Image&gt; component. Use a high-contrast dark image: a close-up of a circuit board, glowing printer nozzle, or dark campus corridor at night. The parallelogram reveal animation still looks stunning with a static image.</div>
+          <div class="asset-spec">Format: .jpg · Dimensions: 1920×1080 · Compressed to under 300KB</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Handwritten tagline SVG (bottom of hero)</div>
+      <div class="info-box">The current SVG at the bottom spells out "Innvera" in a handwriting style. Replace the SVG path content with a simple typed text element, or commission a calligraphic version of your actual tagline.</div>
+      <div class="copy-block">
+        <span class="label">Replace the SVG inner content with this simple version</span>
+        <div class="text">&lt;text x="50%" y="50%" text-anchor="middle" fill="currentColor" font-size="18" font-family="Georgia, serif" font-style="italic"&gt;Innovate & Automate with Us&lt;/text&gt;</div>
+        <button class="copy-btn" onclick="copyText(this, 'Innovate & Automate with Us')">Copy text</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BLUR SENTENCE -->
+<div class="section-card" id="card-blur">
+  <div class="section-header" onclick="toggleSection('blur')">
+    <div class="section-icon" style="background:#fff7ed;">✨</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/BlurSentence.tsx</div>
+      <div class="section-title">Marquee Tagline Strip</div>
+    </div>
+    <span class="section-caret" id="caret-blur">▶</span>
+  </div>
+  <div class="section-body" id="body-blur">
+    <span class="tag tag-change">One line change</span>
+    <div class="sub-section">
+      <div class="sub-title">Replace the sentence variable</div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">const sentence = "Change begins where we're not looking."</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">const sentence = "Print smarter. Study harder. Available 24/7."</div>
+        </div>
+      </div>
+      <div class="copy-block">
+        <span class="label">Alternative options — pick one</span>
+        <div class="text">
+          Option A: <strong>"Print smarter. Study harder. Available 24/7."</strong><br>
+          Option B: <strong>"Zero queues. Zero staff. Zero wait."</strong><br>
+          Option C: <strong>"Your campus just got smarter."</strong>
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Zero queues. Zero staff. Zero wait.')">Copy B</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT NARRATIVE -->
+<div class="section-card" id="card-about">
+  <div class="section-header" onclick="toggleSection('about')">
+    <div class="section-header-inner" style="display:flex;align-items:center;gap:12px;flex:1">
+      <div class="section-icon" style="background:#f0fdf4;">📖</div>
+      <div class="section-meta">
+        <div class="section-file">src/components/sections/AboutNarrative.tsx</div>
+        <div class="section-title">About / What We Do — Sticky Scroll Section</div>
+      </div>
+    </div>
+    <span class="section-caret" id="caret-about">▶</span>
+  </div>
+  <div class="section-body" id="body-about">
+    <span class="tag tag-change">Full content replacement</span>
+    <div class="info-box">This is the most important section for converting college admins. The sticky image + scrolling text structure is perfect — three panels as visitors scroll. Replace the <code>content</code> array and <code>images</code> array entirely.</div>
+
+    <div class="sub-section">
+      <div class="sub-title">Replace the content array (3 scroll panels)</div>
+
+      <div class="copy-block">
+        <span class="label">content[0] — Panel 01</span>
+        <div class="text">
+          <strong>number: "01."</strong><br>
+          <strong>text:</strong> "Innvera Technology builds smart, cloud-based printing kiosks for colleges — giving students 24/7 print access with zero staff, zero queues, and zero hassle."
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Innvera Technology builds smart, cloud-based printing kiosks for colleges — giving students 24/7 print access with zero staff, zero queues, and zero hassle.')">Copy</button>
+      </div>
+
+      <div class="copy-block">
+        <span class="label">content[1] — Panel 02</span>
+        <div class="text">
+          <strong>number: "02."</strong><br>
+          <strong>text:</strong> "Students upload from any device, pay via UPI, and collect prints in seconds. No pen drives. No counters. No waiting. The kiosk handles everything — day or night."
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Students upload from any device, pay via UPI, and collect prints in seconds. No pen drives. No counters. No waiting. The kiosk handles everything — day or night.')">Copy</button>
+      </div>
+
+      <div class="copy-block">
+        <span class="label">content[2] — Panel 03</span>
+        <div class="text">
+          <strong>number: "03."</strong><br>
+          <strong>text:</strong> "We offer two models: we place and manage everything at no cost to your institution, or you own the kiosk and keep 80% of every rupee your students spend on printing."
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'We offer two models: we place and manage everything at no cost to your institution, or you own the kiosk and keep 80% of every rupee your students spend on printing.')">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Replace the images array — 3 photos needed</div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">about1.jpg — Kiosk in use</div>
+          <div class="asset-desc">A student standing at the PrintIT kiosk, phone in hand, uploading a document or tapping the screen. Shoot from a 3/4 angle so both the student and the kiosk screen are visible. Dark moody lighting preferred — it fits the black site aesthetic.</div>
+          <div class="asset-spec">1200×1600px (portrait) · .jpg compressed · Pair with Panel 01</div>
+        </div>
+      </div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">about2.jpg — Print output moment</div>
+          <div class="asset-desc">A close-up of papers coming out of the printer, or a student's hands collecting printed pages. This is the "payoff" image — it proves the kiosk works. Capture the motion blur of the paper coming out if possible.</div>
+          <div class="asset-spec">1200×1600px (portrait) · .jpg compressed · Pair with Panel 02</div>
+        </div>
+      </div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">about3.jpg — Campus/institution context</div>
+          <div class="asset-desc">A wide shot of a college campus entrance, library interior, or corridor — ideally at dusk or night with lights on. This sets the institutional context. No people needed — the environment communicates "this is where your students will find it."</div>
+          <div class="asset-spec">1200×1600px (portrait) · .jpg compressed · Pair with Panel 03</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORANGE STATEMENT -->
+<div class="section-card" id="card-orange">
+  <div class="section-header" onclick="toggleSection('orange')">
+    <div class="section-icon" style="background:#fff7ed;">🟠</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/OrangeStatement.tsx</div>
+      <div class="section-title">Bold Orange Statement Section</div>
+    </div>
+    <span class="section-caret" id="caret-orange">▶</span>
+  </div>
+  <div class="section-body" id="body-orange">
+    <span class="tag tag-change">Replace word array</span>
+    <div class="info-box">The orange (#ff6a41) background, the word-by-word animation, and the bold/regular word mixing — all perfect. Only the words array needs replacing. The bold words animate larger and uppercase, so use them for impact words.</div>
+
+    <div class="sub-section">
+      <div class="sub-title">Replace the words array with this</div>
+      <div class="copy-block">
+        <span class="label">New words array — bold:true words appear larger & uppercase</span>
+        <div class="text">
+          { text: "Across" },<br>
+          { text: "India," },<br>
+          { text: "thousands", bold: true },<br>
+          { text: "of" },<br>
+          { text: "students" },<br>
+          { text: "waste" },<br>
+          { text: "hours", bold: true },<br>
+          { text: "every" },<br>
+          { text: "week" },<br>
+          { text: "waiting" },<br>
+          { text: "in" },<br>
+          { text: "queues", bold: true },<br>
+          { text: "at" },<br>
+          { text: "print" },<br>
+          { text: "counters—" },<br>
+          { text: "while", bold: true },<br>
+          { text: "a", bold: true },<br>
+          { text: "smarter", bold: true },<br>
+          { text: "solution", bold: true },<br>
+          { text: "already" },<br>
+          { text: "exists.", bold: true }
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Across India, thousands of students waste hours every week waiting in queues at print counters — while a smarter solution already exists.')">Copy text</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPACT PROJECTS → PRODUCTS/MODELS -->
+<div class="section-card" id="card-impact">
+  <div class="section-header" onclick="toggleSection('impact')">
+    <div class="section-icon" style="background:#f0f9ff;">🖨</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/ImpactProjects.tsx</div>
+      <div class="section-title">Horizontal Scroll Cards → Our Models</div>
+    </div>
+    <span class="section-caret" id="caret-impact">▶</span>
+  </div>
+  <div class="section-body" id="body-impact">
+    <span class="tag tag-change">Replace projects array</span>
+    <div class="info-box">The horizontal scroll effect is one of the best parts of this site — keep it entirely. Just replace the 4 project cards with 3 cards for your business models. Remove the "location" field and replace with a "best for" field.</div>
+
+    <div class="sub-section">
+      <div class="sub-title">Card 1 — Managed Model</div>
+      <div class="copy-block">
+        <span class="label">projects[0]</span>
+        <div class="text">
+          <strong>id:</strong> "managed-model"<br>
+          <strong>title:</strong> "Fully Managed Kiosk"<br>
+          <strong>impact:</strong> ["We install, operate, and maintain everything.", "You provide the space. We handle the rest.", "Students get 24/7 printing from day one."]<br>
+          <strong>scope:</strong> "Zero Investment Model"<br>
+          <strong>location:</strong> "Best for: Institutions wanting zero hassle"<br>
+          <strong>year:</strong> "Model A"<br>
+          <strong>image:</strong> "/assets/images/model-managed.jpg"<br>
+          <strong>link:</strong> "/models/managed"
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Fully Managed Kiosk — We install, operate, and maintain everything. You provide the space. We handle the rest.')">Copy</button>
+      </div>
+
+      <div class="copy-block">
+        <span class="label">projects[1]</span>
+        <div class="text">
+          <strong>id:</strong> "ownership-model"<br>
+          <strong>title:</strong> "Own Your Kiosk"<br>
+          <strong>impact:</strong> ["Purchase the kiosk for ₹85,000 + GST.", "Keep 80% of every print transaction.", "Full ownership, full control, maximum return."]<br>
+          <strong>scope:</strong> "High Revenue Model"<br>
+          <strong>location:</strong> "Best for: Institutions wanting full control"<br>
+          <strong>year:</strong> "Model B"<br>
+          <strong>image:</strong> "/assets/images/model-owned.jpg"<br>
+          <strong>link:</strong> "/models/ownership"
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Own Your Kiosk — Purchase the kiosk for ₹85,000 + GST. Keep 80% of every print. Full ownership, full control.')">Copy</button>
+      </div>
+
+      <div class="copy-block">
+        <span class="label">projects[2] — Stats card (new concept)</span>
+        <div class="text">
+          <strong>id:</strong> "by-the-numbers"<br>
+          <strong>title:</strong> "By the Numbers"<br>
+          <strong>impact:</strong> ["₹75,000+ monthly revenue potential.", "500 prints per day at peak usage.", "2–5 days to install and go live."]<br>
+          <strong>scope:</strong> "Real Results"<br>
+          <strong>location:</strong> "Based on live campus data"<br>
+          <strong>year:</strong> "2025"<br>
+          <strong>image:</strong> "/assets/images/stats-bg.jpg"<br>
+          <strong>link:</strong> "/models"
+        </div>
+        <button class="copy-btn" onclick="copyText(this, '₹75,000+ monthly revenue potential. 500 prints per day. 2-5 days to install.')">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Images needed for the 3 cards</div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">model-managed.jpg</div>
+          <div class="asset-desc">A technician or team member installing or setting up the kiosk — shows Innvera doing the work, communicating "we handle it." A wrench, cable, or setup activity in frame.</div>
+          <div class="asset-spec">800×600px landscape · dark toned</div>
+        </div>
+      </div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">model-owned.jpg</div>
+          <div class="asset-desc">A college administrator or dean standing confidently next to the kiosk — communicates ownership and authority. Professional attire, slight smile. Kiosk visible in background.</div>
+          <div class="asset-spec">800×600px landscape · well-lit</div>
+        </div>
+      </div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">stats-bg.jpg</div>
+          <div class="asset-desc">An abstract dark image — close-up of paper stacks, a blurred campus at night, or a minimalist dark texture. This card will have the revenue numbers overlaid on top, so a simple non-distracting background works best.</div>
+          <div class="asset-spec">800×600px landscape · very dark, low detail</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PODCAST → CONTACT/CTA -->
+<div class="section-card" id="card-podcast">
+  <div class="section-header" onclick="toggleSection('podcast')">
+    <div class="section-icon" style="background:#fdf4ff;">📞</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/PodcastSection.tsx</div>
+      <div class="section-title">Podcast Section → Contact & CTA</div>
+    </div>
+    <span class="section-caret" id="caret-podcast">▶</span>
+  </div>
+  <div class="section-body" id="body-podcast">
+    <span class="tag tag-change">Full content replacement</span>
+    <div class="info-box">This section has two parts: a scrolling marquee text at the top, and two side-by-side cards below. Both need content changes. The layout and visual design stay identical.</div>
+
+    <div class="sub-section">
+      <div class="sub-title">Top marquee text (currently "Echoes of Change.")</div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">"Echoes of Change."</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">"Ready to modernise your campus?"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Description paragraph below marquee</div>
+      <div class="copy-block">
+        <span class="label">Replace the podcast description paragraph</span>
+        <div class="text">Getting started with PrintIT takes less than a week. We assess your campus, install the kiosk, and go live — with students printing from day one. Whether you want zero investment or full ownership, we have a model built for you. Let's talk.</div>
+        <button class="copy-btn" onclick="copyText(this, 'Getting started with PrintIT takes less than a week. We assess your campus, install the kiosk, and go live — with students printing from day one. Whether you want zero investment or full ownership, we have a model built for you. Let\'s talk.')">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Left card (currently "The Podcast" in orange)</div>
+      <div class="copy-block">
+        <span class="label">Left orange card — replace title and body</span>
+        <div class="text">
+          <strong>Title:</strong> "Request a Demo"<br><br>
+          <strong>Subtitle/link text:</strong> "Book a free visit →"<br><br>
+          <strong>Body:</strong> "See PrintIT in action at your campus. We'll bring the kiosk, show you the app, and walk you through the numbers. No commitment required."<br><br>
+          <strong>href:</strong> "mailto:innveratechnology@gmail.com?subject=Demo Request"
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Request a Demo — See PrintIT in action at your campus. We will bring the kiosk, show you the app, and walk you through the numbers. No commitment required.')">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Right card (currently "The Crowdfunding" — frosted glass)</div>
+      <div class="copy-block">
+        <span class="label">Right frosted-glass card</span>
+        <div class="text">
+          <strong>Title:</strong> "Get the Proposal"<br><br>
+          <strong>Link text:</strong> "Download PDF →"<br><br>
+          <strong>Body:</strong> "Download our detailed proposal documents for the Managed Model or the Ownership Model — everything your institution needs to make a decision."<br><br>
+          <strong>href:</strong> Link to your proposal PDFs hosted on Google Drive or your server
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Get the Proposal — Download our detailed proposal for the Managed Model or Ownership Model.')">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Background image for this section</div>
+      <div class="asset-box">
+        <div class="asset-icon">📸</div>
+        <div class="asset-content">
+          <div class="asset-title">Background image (currently from external Supabase URL)</div>
+          <div class="asset-desc">Replace with a wide shot of a bustling campus corridor or canteen — lots of students, motion, energy. This section has a heavy blur/overlay so the image just needs to communicate "busy student environment." Download and host locally at /public/assets/images/cta-bg.jpg</div>
+          <div class="asset-spec">1920×1080px · .jpg · hosted locally, not external URL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="section-card" id="card-footer">
+  <div class="section-header" onclick="toggleSection('footer')">
+    <div class="section-icon" style="background:#fafafa;">🔻</div>
+    <div class="section-meta">
+      <div class="section-file">src/components/sections/Footer.tsx</div>
+      <div class="section-title">Footer — Contact, Links, Giant Logo</div>
+    </div>
+    <span class="section-caret" id="caret-footer">▶</span>
+  </div>
+  <div class="section-body" id="body-footer">
+    <span class="tag tag-change">Replace all text content</span>
+
+    <div class="sub-section">
+      <div class="sub-title">Main contact paragraph (character-reveal animation)</div>
+      <div class="copy-block">
+        <span class="label">Replace the "text" variable — this animates in letter by letter</span>
+        <div class="text">We'd love to connect with your institution. Whether you're ready to install a kiosk, want a demo, or just want to explore how PrintIT can work for your campus — reach out. Let's build a smarter campus together.</div>
+        <button class="copy-btn" onclick="copyText(this, `We'd love to connect with your institution. Whether you're ready to install a kiosk, want a demo, or just want to explore how PrintIT can work for your campus — reach out. Let's build a smarter campus together.`)">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Contact email link</div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">href="mailto:contact@innveradoc.org" → "Contact us"</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">href="mailto:innveratechnology@gmail.com" → "innveratechnology@gmail.com"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">"Stay tuned" newsletter section — repurpose as enquiry CTA</div>
+      <div class="copy-block">
+        <span class="label">Replace the h4 label and description paragraph</span>
+        <div class="text">
+          <strong>h4:</strong> "Get in touch"<br><br>
+          <strong>Paragraph:</strong> "Have a campus in mind? Send us a message and we'll get back within 24 hours with a customised proposal and a demo appointment at your convenience."<br><br>
+          <strong>Input placeholder label:</strong> "Your institution email"<br><br>
+          <strong>Checkbox text:</strong> "I represent a college or university and would like to receive information about PrintIT kiosk solutions from Innvera Technology."
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'Have a campus in mind? Send us a message and we will get back within 24 hours with a customised proposal.')">Copy</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Social / Follow links (right side)</div>
+      <div class="copy-block">
+        <span class="label">Replace the 4 social links</span>
+        <div class="text">
+          { text: "LinkedIn — Innvera Technology", href: "https://linkedin.com/company/innveratechnology" }<br>
+          { text: "Instagram", href: "https://instagram.com/innveratechnology" }<br>
+          { text: "WhatsApp: +91 9392861389", href: "https://wa.me/919392861389" }<br>
+          { text: "Email us directly", href: "mailto:innveratechnology@gmail.com" }
+        </div>
+        <button class="copy-btn" onclick="copyText(this, 'WhatsApp: +91 9392861389')">Copy WA</button>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Remove / replace the EU logo</div>
+      <div class="change-box">
+        <div style="flex:1">
+          <div class="old-text">EU Creative Europe Media logo + "With the support of"</div>
+          <div class="arrow">↓</div>
+          <div class="new-text">CIN number + registered address block: "CIN: U28299AP2025PTC120873 · 22-8-152/A3, Madhav Puram, Tirupati – 517507, AP"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-section">
+      <div class="sub-title">Footer texture image</div>
+      <div class="asset-box">
+        <div class="asset-icon">🖼</div>
+        <div class="asset-content">
+          <div class="asset-title">texture.png and texture-footer.png</div>
+          <div class="asset-desc">These are grain/noise texture overlays. Keep the existing ones — they work fine on any brand. No replacement needed. But if you want to personalise, generate a subtle noise texture (any free noise generator online, search "noise texture PNG transparent") and place at /public/assets/images/texture-footer.png</div>
+          <div class="asset-spec">512×512px · PNG with transparency · tile-able</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleSection(id) {
+  const body = document.getElementById('body-' + id);
+  const caret = document.getElementById('caret-' + id);
+  const header = body.previousElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (caret) {
+    caret.classList.toggle('open', !isOpen);
+    caret.textContent = !isOpen ? '▼' : '▶';
+  }
+  if (header) header.classList.toggle('open', !isOpen);
+}
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+toggleSection('hero');
+toggleSection('about');
+</script>

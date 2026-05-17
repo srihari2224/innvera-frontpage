@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Operations — Pan-India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: #0a0d11;
+  color: #e8e8ea;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  height: 100%;
+}
+
+.ops { position: relative; width: 100%; height: 100vh; background: #0a0d11; overflow: hidden; }
+.stage { position: relative; width: 100%; height: 100%; cursor: crosshair; }
+
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.layer-world, .layer-india { transition: opacity 0.85s cubic-bezier(0.65, 0, 0.35, 1); }
+.layer-india { opacity: 0; }
+.stage.india-mode .layer-world { opacity: 0; }
+.stage.india-mode .layer-india { opacity: 1; }
+
+.sphere { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 0.6; }
+.graticule { fill: none; stroke: rgba(255,255,255,0.055); stroke-width: 0.4; shape-rendering: geometricPrecision; }
+.country { fill: #4a4e54; stroke: #0a0d11; stroke-width: 0.35; shape-rendering: geometricPrecision; }
+.country.india-highlight { fill: #FF6B47; }
+.india-state { fill: #5e6268; stroke: #0a0d11; stroke-width: 0.45; transition: fill 0.3s ease; shape-rendering: geometricPrecision; }
+.india-state:hover { fill: #FF6B47; }
+.india-outline { fill: none; stroke: rgba(255,255,255,0.18); stroke-width: 0.8; stroke-linejoin: round; }
+
+.reg { position: absolute; top: clamp(20px, 3vh, 36px); right: clamp(20px, 3vw, 42px); font-size: 13px; color: rgba(255,255,255,0.5); z-index: 10; }
+
+.left-edge {
+  position: absolute; top: 50%;
+  left: clamp(-24px, -2vw, -45px); transform: translateY(-50%);
+  font-size: clamp(56px, 12vw, 160px); font-weight: 200;
+  letter-spacing: -0.04em; color: #ffffff; line-height: 0.95;
+  z-index: 4; white-space: nowrap; user-select: none;
+  transition: transform 0.7s cubic-bezier(0.65,0,0.35,1);
+}
+.stage.india-mode .left-edge { transform: translateY(-50%) translateX(-12px); }
+
+.right-frame {
+  position: absolute; top: 0; right: 0;
+  width: clamp(150px, 14vw, 230px); height: clamp(160px, 24vh, 270px);
+  border-left: 1px solid rgba(255,255,255,0.22);
+  border-bottom: 1px solid rgba(255,255,255,0.22);
+  z-index: 6; display: flex; align-items: center; justify-content: center; padding: 0 18px;
+}
+.frame-text {
+  position: absolute; font-size: clamp(11px, 1.05vw, 16px); font-weight: 500;
+  letter-spacing: 0.18em; line-height: 1.55; color: #ffffff;
+  text-transform: uppercase; text-align: center;
+  transition: opacity 0.55s ease; white-space: nowrap;
+}
+.frame-text.global { opacity: 1; }
+.frame-text.india { opacity: 0; }
+.stage.india-mode .frame-text.global { opacity: 0; }
+.stage.india-mode .frame-text.india { opacity: 1; }
+
+.info-row {
+  position: absolute; bottom: clamp(20px, 3vh, 36px); left: 0; right: 0;
+  display: flex; justify-content: space-between; padding: 0 clamp(20px, 3vw, 42px);
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.32em;
+  color: rgba(255,255,255,0.4); text-transform: uppercase; z-index: 5; pointer-events: none; gap: 12px;
+}
+.info-row .coord-toggle { display: inline-block; position: relative; }
+.info-row .coord-toggle .global { opacity: 1; transition: opacity 0.4s; }
+.info-row .coord-toggle .india { opacity: 0; position: absolute; right: 0; left: auto; transition: opacity 0.4s; }
+.stage.india-mode .info-row .coord-toggle .global { opacity: 0; }
+.stage.india-mode .info-row .coord-toggle .india { opacity: 1; }
+
+.top-info {
+  position: absolute; top: clamp(20px, 3vh, 36px); left: clamp(20px, 3vw, 42px);
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.32em;
+  color: rgba(255,255,255,0.45); text-transform: uppercase; z-index: 6;
+}
+.top-info .coord-toggle { position: relative; display: inline-block; }
+.top-info .coord-toggle .global { opacity: 1; transition: opacity 0.4s; }
+.top-info .coord-toggle .india { opacity: 0; position: absolute; left: 0; transition: opacity 0.4s; }
+.stage.india-mode .top-info .coord-toggle .global { opacity: 0; }
+.stage.india-mode .top-info .coord-toggle .india { opacity: 1; }
+
+.tick { position: absolute; width: 10px; height: 10px; z-index: 7; pointer-events: none; }
+.tick::before, .tick::after { content: ''; position: absolute; background: rgba(255,255,255,0.3); }
+.tick-tl { top: 12px; left: 12px; }
+.tick-tl::before { top:0; left:0; width:1px; height:10px; }
+.tick-tl::after  { top:0; left:0; width:10px; height:1px; }
+.tick-bl { bottom: 12px; left: 12px; }
+.tick-bl::before { bottom:0; left:0; width:1px; height:10px; }
+.tick-bl::after  { bottom:0; left:0; width:10px; height:1px; }
+.tick-br { bottom: 12px; right: 12px; }
+.tick-br::before { bottom:0; right:0; width:1px; height:10px; }
+.tick-br::after  { bottom:0; right:0; width:10px; height:1px; }
+
+.loading {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.3); text-transform: uppercase; pointer-events: none;
+  opacity: 1; transition: opacity 0.4s ease;
+}
+.loaded .loading { opacity: 0; }
+
+.hint {
+  position: absolute; bottom: 50%; right: clamp(150px, 15vw, 240px); margin-bottom: -8px;
+  display: flex; align-items: center; gap: 10px; z-index: 5;
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.32em;
+  color: rgba(255,255,255,0.45); text-transform: uppercase;
+  transition: opacity 0.4s ease; pointer-events: none;
+}
+.hint .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.5);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1.1); }
+}
+.stage.india-mode .hint { opacity: 0; }
+
+/* Mobile tuning */
+@media (max-width: 640px) {
+  .left-edge { font-size: clamp(44px, 16vw, 80px); }
+  .right-frame { width: 130px; height: 140px; padding: 0 10px; }
+  .frame-text { font-size: 10px; letter-spacing: 0.15em; }
+  .hint { right: 16px; bottom: 60px; margin-bottom: 0; }
+  .info-row { font-size: 8px; flex-wrap: wrap; }
+  .top-info { font-size: 8px; }
+}
+</style>
+</head>
+<body>
+
+<section class="ops">
+  <div class="stage" id="stage">
+    <svg id="map" viewBox="0 0 1400 760" preserveAspectRatio="xMidYMid meet"></svg>
+
+    <div class="loading" id="loading">— Loading Geographic Data —</div>
+
+    <div class="top-info">
+      <span class="coord-toggle">
+        <span class="global">28.6139° N&nbsp;/&nbsp;77.2090° E&nbsp;—&nbsp;New Delhi</span>
+        <span class="india">12.9716° N&nbsp;/&nbsp;77.5946° E&nbsp;—&nbsp;Bengaluru</span>
+      </span>
+    </div>
+
+    <div class="left-edge">Connect</div>
+    <span class="reg">®</span>
+
+    <div class="right-frame">
+      <div class="frame-text global">We<br>Operate<br>Globally</div>
+      <div class="frame-text india">We<br>Operate<br>Pan-India</div>
+    </div>
+
+    <div class="hint">
+      <span class="dot"></span>
+      <span>Hover&nbsp;→&nbsp;India</span>
+    </div>
+
+    <div class="info-row">
+      <span>Sec. 04 / Network Footprint</span>
+      <span class="coord-toggle">
+        <span class="global">Global Reach&nbsp;—&nbsp;47 Markets</span>
+        <span class="india">Pan-India&nbsp;—&nbsp;32 States &amp; UTs</span>
+      </span>
+    </div>
+
+    <div class="tick tick-tl"></div>
+    <div class="tick tick-bl"></div>
+    <div class="tick tick-br"></div>
+  </div>
+</section>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  const svg = d3.select('#map');
+  const WIDTH = 1400;
+  const HEIGHT = 760;
+
+  // Layer groups
+  const gWorld = svg.append('g').attr('class', 'layer-world');
+  const gIndia = svg.append('g').attr('class', 'layer-india');
+
+  // ── WORLD LAYER ──────────────────────────────────────────────────
+  const worldProj = d3.geoNaturalEarth1()
+    .scale(255)
+    .translate([WIDTH / 2, HEIGHT / 2 + 20]);
+  const worldPath = d3.geoPath(worldProj);
+
+  gWorld.append('path')
+    .attr('class', 'sphere')
+    .attr('d', worldPath({ type: 'Sphere' }));
+
+  gWorld.append('path')
+    .attr('class', 'graticule')
+    .attr('d', worldPath(d3.geoGraticule10()));
+
+  // ── INDIA LAYER (centred & enlarged) ─────────────────────────────
+  // We'll fit India to a larger area inside the SVG once it loads.
+
+  // Try a couple of india GeoJSON sources with full Survey-of-India borders
+  // (Ladakh, J&K, Arunachal Pradesh included). First success wins.
+  async function loadIndia() {
+    const sources = [
+      'https://raw.githubusercontent.com/udit-001/india-maps-data/main/geojson/states/india.geojson',
+      'https://cdn.jsdelivr.net/gh/datameet/maps@master/States/Admin2.geojson',
+      'https://raw.githubusercontent.com/geohacker/india/master/state/india_telengana.geojson'
+    ];
+    for (const url of sources) {
+      try {
+        const data = await d3.json(url);
+        if (data && (data.features || data.objects)) return data;
+      } catch (e) { /* try next */ }
+    }
+    return null;
+  }
+
+  Promise.all([
+    d3.json('https://unpkg.com/world-atlas@2/countries-110m.json'),
+    loadIndia()
+  ]).then(function ([worldTopo, indiaGeo]) {
+    document.body.classList.add('loaded');
+
+    // World countries
+    const countries = topojson.feature(worldTopo, worldTopo.objects.countries).features;
+    gWorld.selectAll('.country')
+      .data(countries)
+      .join('path')
+      .attr('class', d => 'country' + (d.properties && d.properties.name === 'India' ? ' india-highlight' : ''))
+      .attr('d', worldPath);
+
+    if (indiaGeo) {
+      // Normalise (handle TopoJSON OR GeoJSON)
+      let states;
+      if (indiaGeo.type === 'Topology') {
+        const key = Object.keys(indiaGeo.objects)[0];
+        states = topojson.feature(indiaGeo, indiaGeo.objects[key]);
+      } else if (indiaGeo.type === 'FeatureCollection') {
+        states = indiaGeo;
+      } else {
+        states = { type: 'FeatureCollection', features: [indiaGeo] };
+      }
+
+      // Mercator fit — use the actual state bounds so all of J&K/Ladakh/AP appear
+      const indiaProj = d3.geoMercator()
+        .fitExtent([[140, 70], [WIDTH - 140, HEIGHT - 60]], states);
+      const indiaPath = d3.geoPath(indiaProj);
+
+      gIndia.selectAll('.india-state')
+        .data(states.features)
+        .join('path')
+        .attr('class', 'india-state')
+        .attr('d', indiaPath);
+
+      // Country outline (only valid for topojson; fallback draws state borders again)
+      if (indiaGeo.type === 'Topology') {
+        try {
+          const key = Object.keys(indiaGeo.objects)[0];
+          const outline = topojson.mesh(indiaGeo, indiaGeo.objects[key], (a, b) => a === b);
+          gIndia.append('path').attr('class', 'india-outline').attr('d', indiaPath(outline));
+        } catch (e) { /* ignore */ }
+      } else {
+        // Build outline by drawing each feature's outer ring with the outline class
+        const outlineGroup = gIndia.append('g');
+        outlineGroup.selectAll('.india-outline')
+          .data(states.features)
+          .join('path')
+          .attr('class', 'india-outline')
+          .attr('d', indiaPath);
+      }
+    } else {
+      document.getElementById('loading').textContent = '— India map data unavailable —';
+      document.body.classList.remove('loaded');
+    }
+  }).catch(function (err) {
+    console.error('Map load error', err);
+    document.getElementById('loading').textContent = '— Map data unavailable —';
+  });
+
+  // ── Hover trigger (works for both touch & mouse) ─────────────────
+  let inIndiaMode = false;
+  function setIndia(on) {
+    if (on === inIndiaMode) return;
+    inIndiaMode = on;
+    stage.classList.toggle('india-mode', on);
+  }
+  stage.addEventListener('mouseenter', () => setIndia(true));
+  stage.addEventListener('mouseleave', () => setIndia(false));
+  // Touch toggle
+  stage.addEventListener('click', () => setIndia(!inIndiaMode));
+})();
+</script>
+</body>
+</html>

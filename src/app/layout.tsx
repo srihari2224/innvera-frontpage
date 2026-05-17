@@ -5,8 +5,14 @@ import ErrorReporter from "@/components/ErrorReporter";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Innvera - A Transmedia Documentary",
-  description: "Innvera is a transmedia documentary that uncovers humanity's hidden capacity to tackle the climate crisis.",
+  title: "Innvera Technology — Smart Campus Printing Solutions",
+  description: "Innvera Technology builds smart cloud-based printing kiosks for colleges and universities across India. PrintIT — 24/7 self-service printing, zero staff required.",
+  keywords: "college printing kiosk, campus printing, cloud printing, self-service printing, PrintIT, smart campus, Andhra Pradesh, India",
+  openGraph: {
+    title: "PrintIT by Innvera Technology",
+    description: "Smart cloud-based printing kiosks for campuses.",
+    url: "https://innveratechnology.com",
+  },
   verification: {
     google: "EuLEtNV6SyX7fnzn6vwGK1NFPZH6xNTeGMHarZl7PO0",
   },
@@ -19,6 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@1,400;1,500&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="antialiased" suppressHydrationWarning>
         <Script
           id="orchids-browser-logs"

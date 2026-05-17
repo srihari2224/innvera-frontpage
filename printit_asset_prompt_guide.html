@@ -1,0 +1,366 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif}
+.g{padding:0 0 2rem}
+.top{background:#0f1923;color:#fff;padding:1.25rem 1.5rem;border-radius:8px;margin-bottom:1.25rem}
+.top h1{font-size:17px;font-weight:600;margin-bottom:3px}
+.top p{font-size:12px;color:rgba(255,255,255,.45)}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.badge{font-size:10px;padding:2px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:.5px solid rgba(255,255,255,.15)}
+.badge.r{background:rgba(255,107,71,.12);color:#ff6b47;border-color:rgba(255,107,71,.3)}
+.card{border:.5px solid var(--color-border-tertiary);border-radius:10px;margin-bottom:.75rem;overflow:hidden;background:var(--color-background-primary)}
+.ch{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:var(--color-background-secondary);border-bottom:.5px solid transparent;transition:border-color .2s}
+.ch:hover{background:var(--color-background-primary)}
+.ch.open{border-bottom-color:var(--color-border-tertiary)}
+.ico{width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.cm{flex:1}
+.cf{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+.ct{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.cv{font-size:11px;color:var(--color-text-tertiary);transition:transform .2s}
+.cv.o{transform:rotate(90deg)}
+.cb{padding:14px;display:none}
+.cb.open{display:block}
+.atag{display:inline-block;font-size:9px;font-weight:500;padding:2px 8px;border-radius:20px;margin-bottom:10px}
+.avid{background:#fef3c7;color:#92400e}
+.aphoto{background:#dbeafe;color:#1e40af}
+.aill{background:#ede9fe;color:#5b21b6}
+.asvg{background:#d1fae5;color:#065f46}
+.asset{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-left:3px solid #10b981;border-radius:6px;padding:11px 13px;margin-bottom:8px}
+.asset-head{display:flex;align-items:flex-start;gap:8px}
+.asset-ico{font-size:15px;flex-shrink:0;margin-top:1px}
+.asset-name{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.asset-file{font-family:var(--font-mono);font-size:10px;color:var(--color-text-tertiary);margin-bottom:6px}
+.asset-spec{font-family:var(--font-mono);font-size:10px;color:var(--color-text-tertiary);background:var(--color-background-tertiary);padding:4px 8px;border-radius:4px;margin-top:5px;display:inline-block}
+.prompt-box{background:#0f1923;border-radius:6px;padding:12px;margin-top:8px;font-size:11.5px;color:#e2e8f0;line-height:1.75;position:relative}
+.prompt-box .plabel{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#ff6b47;margin-bottom:6px;display:block;font-family:var(--font-mono)}
+.prompt-text{font-style:italic;color:#cbd5e1}
+.prompt-text b{font-style:normal;color:#fff;font-weight:600}
+.cbtn{position:absolute;top:8px;right:8px;font-size:9px;padding:3px 8px;border-radius:4px;border:.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);cursor:pointer;transition:all .15s}
+.cbtn:hover{background:rgba(255,255,255,.1)}
+.cbtn.copied{color:#10b981;border-color:#6ee7b7;background:rgba(16,185,129,.1)}
+.note{background:var(--color-background-info);border:.5px solid var(--color-border-tertiary);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--color-text-info);margin-bottom:10px;line-height:1.5}
+.divider{border:none;border-top:.5px solid var(--color-border-tertiary);margin:12px 0}
+.sub-h{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;padding-bottom:5px;border-bottom:.5px solid var(--color-border-tertiary)}
+.tech{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;line-height:1.6}
+.tech b{color:var(--color-text-primary);font-weight:500}
+</style>
+
+<div class="g">
+<div class="top">
+  <h1>PrintIT — Complete Asset Production Guide</h1>
+  <p>Every asset you need, with detailed prompts for AI generation, videographers, and photographers</p>
+  <div class="badges">
+    <span class="badge r">Hero Video — Most Critical</span>
+    <span class="badge">7 sections</span>
+    <span class="badge">22 assets total</span>
+    <span class="badge">AI + real photo prompts</span>
+  </div>
+</div>
+
+<!-- HERO VIDEO -->
+<div class="card" id="card-hero">
+  <div class="ch open" onclick="tog('hero')">
+    <div class="ico" style="background:#fff0ec">🎬</div>
+    <div class="cm"><div class="cf">Hero.tsx — /public/assets/videos/</div><div class="ct">Hero Background Video (Most Important Asset)</div></div>
+    <span class="cv o" id="cv-hero">▶</span>
+  </div>
+  <div class="cb open" id="cb-hero">
+    <span class="atag avid">Video Asset</span>
+    <div class="note">This is the single most important asset on the entire site. The INNVERA text animates first, then as the visitor scrolls, this video reveals through a cinematic parallelogram wipe. Every college admin who visits will watch this first. It must feel premium, modern, and instantly communicate what PrintIT does.</div>
+
+    <div class="sub-h">What the video must show — shot list</div>
+    <div class="tech">The video is a <b>15–25 second seamless loop</b>. It plays muted, autoplays, and loops silently behind the INNVERA hero text. The mood must be <b>dark, cinematic, high-contrast</b> — exactly like a product launch film. Think iPhone launch video aesthetic but for a printing kiosk.</div>
+
+    <div class="asset">
+      <div class="asset-head">
+        <div class="asset-ico">🎥</div>
+        <div>
+          <div class="asset-name">intro.mp4 — Hero loop video</div>
+          <div class="asset-file">/public/assets/videos/intro.mp4</div>
+        </div>
+      </div>
+      <div class="prompt-box">
+        <span class="plabel">Videographer Brief — give this exactly to your cinematographer</span>
+        <div class="prompt-text">
+          Shoot a <b>cinematic 20-second seamlessly looping product video</b> for PrintIT, a self-service printing kiosk for college campuses. The video will play muted behind large white text on a black website.<br><br>
+          <b>Shot sequence (cut together, total 20–25 seconds):</b><br><br>
+          <b>Shot 1 (4–5 sec):</b> Extreme close-up of a student's hand unlocking their phone. The screen glows white in a dark corridor. The glow should fill the frame from the right side. Shallow depth of field — the hand is sharp, everything behind is dark and blurred.<br><br>
+          <b>Shot 2 (3–4 sec):</b> Screen recording / phone mockup of the PrintIT app — someone selecting print settings (B&W toggle, number of copies). This should be shot as a screen capture or a close-up of the phone screen with the app UI visible.<br><br>
+          <b>Shot 3 (4–5 sec):</b> Medium shot: student walks up to the PrintIT kiosk in a dark corridor. The kiosk screen glows coral/orange. Student taps the screen. Backlit from behind — the kiosk light creates a rim light on the student's silhouette.<br><br>
+          <b>Shot 4 (3–4 sec):</b> Extreme close-up: papers emerge from the printer slot, soft motion blur. The white of the paper against the dark kiosk body is the hero moment of the video.<br><br>
+          <b>Shot 5 (4–5 sec):</b> Wide shot of a campus corridor or library at night, the kiosk glowing in the middle distance. Students pass by or study nearby. The kiosk is a beacon of light in an otherwise dark space.<br><br>
+          <b>Technical specs:</b> Shoot in <b>4K</b>, export at <b>1920×1080 H.264</b> under <b>8MB</b>. Grade dark — lift the blacks only slightly, push contrast. Color temperature: cool/blue-tinted highlights, warm kiosk screen. <b>NO camera shake</b> — use gimbal or tripod. The video loops: last frame must match first frame visually (both show the dark corridor or kiosk glow).
+        </div>
+        <button class="cbtn" onclick="cp(this,'Shoot a cinematic 20-second seamlessly looping product video for PrintIT. Shot sequence: 1) Extreme close-up student hand unlocking phone glowing white in dark corridor. 2) PrintIT app screen showing print settings. 3) Student walks up to glowing kiosk in dark corridor, taps screen. 4) Extreme close-up of papers emerging from printer slot. 5) Wide shot of campus corridor at night with kiosk glowing. Specs: 4K, export 1920x1080 H.264 under 8MB, dark cinematic grade, no camera shake, seamless loop.')">Copy brief</button>
+      </div>
+      <div class="prompt-box" style="margin-top:6px">
+        <span class="plabel">AI Video Prompt (Sora / Runway / Kling)</span>
+        <div class="prompt-text">
+          <b>Prompt:</b> Cinematic dark short film, self-service printing kiosk glowing with warm orange light in a dark university corridor at night. A student approaches, their silhouette backlit by the kiosk screen. They tap the touchscreen. Papers emerge from a slot in slow motion, crisp white against dark background. Camera tracks smoothly from medium shot to close-up on the paper output. Moody blue-black ambient light, single warm point-of-light from kiosk. Photorealistic. 24fps film grain. No text. No logos.<br><br>
+          <b>Style reference:</b> Apple product launch video, Dyson product film, dark editorial cinematography.<br>
+          <b>Negative prompt:</b> cartoon, animation, bright daylight, people smiling at camera, stock footage feel, text overlays, logos.
+        </div>
+        <button class="cbtn" onclick="cp(this,'Cinematic dark short film, self-service printing kiosk glowing with warm orange light in a dark university corridor at night. A student approaches, their silhouette backlit by the kiosk screen. They tap the touchscreen. Papers emerge from a slot in slow motion, crisp white against dark background. Camera tracks smoothly from medium shot to close-up on the paper output. Moody blue-black ambient light, single warm point-of-light from kiosk. Photorealistic. 24fps film grain. No text. No logos.')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">Format: .mp4 H.264 · 1920×1080 · under 8MB · seamless loop · no audio</div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT NARRATIVE IMAGES -->
+<div class="card" id="card-about">
+  <div class="ch" onclick="tog('about')">
+    <div class="ico" style="background:#eff6ff">📸</div>
+    <div class="cm"><div class="cf">AboutNarrative.tsx — /public/assets/images/</div><div class="ct">About Section — 3 Sticky Scroll Images</div></div>
+    <span class="cv" id="cv-about">▶</span>
+  </div>
+  <div class="cb" id="cb-about">
+    <span class="atag aphoto">Photography</span>
+    <div class="note">These three images appear in the sticky left panel as the visitor scrolls through the "What We Do" section. Each image pairs with one of the three text panels. They must be portrait orientation (tall) and work with a dark overlay.</div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">about1.jpg — Student uploading at phone</div><div class="asset-file">/public/assets/images/about1.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography Direction</span>
+        <div class="prompt-text">
+          <b>Subject:</b> A college student (18–22 years old) standing in a dimly lit campus space — a corridor, stairwell, or library corner. They're looking down at their smartphone. The phone screen casts a soft upward glow on their face.<br><br>
+          <b>Composition:</b> Shot from slightly below eye-level, portrait orientation. Student takes up left 2/3 of frame. Right side shows the dark background. Student should not be looking at camera — they're focused on their phone.<br><br>
+          <b>Lighting:</b> Predominantly dark environment. Primary light source is the phone screen — cool white glow. Optional: a single practical lamp or campus light in the background creating depth.<br><br>
+          <b>Mood:</b> Modern, focused, self-reliant. This student doesn't need help — they're solving a problem themselves.<br><br>
+          <b>Technical:</b> Shot at f/1.8–2.2, ISO 800–1600 for natural grain. No flash. Slight underexposure — keep the darks dark.
+        </div>
+        <button class="cbtn" onclick="cp(this,'College student 18-22yo standing in dimly lit campus corridor looking down at smartphone. Phone screen glows white upward onto face. Portrait orientation, student on left 2/3 of frame, dark background right. Shot f/1.8, ISO 1200, no flash. Mood: modern, focused, self-reliant.')">Copy</button>
+      </div>
+      <div class="prompt-box" style="margin-top:6px">
+        <span class="plabel">Midjourney / Firefly / DALL-E Prompt</span>
+        <div class="prompt-text">Indian college student, early 20s, standing in dark university corridor at night, looking down at glowing smartphone screen, screen light illuminating face from below, ultra-realistic photography, 35mm f/1.8, shallow depth of field, dark moody atmosphere, portrait orientation, editorial style, no text --ar 3:4 --style raw</div>
+        <button class="cbtn" onclick="cp(this,'Indian college student, early 20s, standing in dark university corridor at night, looking down at glowing smartphone screen, screen light illuminating face from below, ultra-realistic photography, 35mm f/1.8, shallow depth of field, dark moody atmosphere, portrait orientation, editorial style, no text --ar 3:4 --style raw')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">1200×1600px · Portrait · .jpg · 80% quality compression</div>
+    </div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">about2.jpg — Papers coming out of kiosk</div><div class="asset-file">/public/assets/images/about2.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography Direction</span>
+        <div class="prompt-text">
+          <b>Subject:</b> Extreme close-up of printed papers emerging from the kiosk's paper output slot. A student's hand reaches in from the bottom of frame to collect them.<br><br>
+          <b>Composition:</b> The paper slot takes up the middle 40% of the frame. The paper is crisp white — the highest-contrast element. The kiosk body is dark matte black/grey on either side. The student's hand is warm skin tone — the only human element.<br><br>
+          <b>Lighting:</b> A single directional light from above-left creates a subtle shadow line that emphasizes the paper edge. The paper should look pristine white — perfectly printed.<br><br>
+          <b>Mood:</b> The payoff moment. Satisfaction. Instant. Efficient. This is the "aha" image — the moment the product delivers its promise.<br><br>
+          <b>Alternative if kiosk not available yet:</b> Shoot a close-up of papers coming out of any printer, focusing on the paper edge and hands collecting. The printer body should be dark/black.
+        </div>
+        <button class="cbtn" onclick="cp(this,'Extreme close-up of white papers emerging from black printer output slot, student hand reaching to collect from bottom of frame, sharp white paper against dark matte black kiosk body, single directional light from above-left, satisfaction mood, portrait orientation')">Copy</button>
+      </div>
+      <div class="prompt-box" style="margin-top:6px">
+        <span class="plabel">AI Image Prompt</span>
+        <div class="prompt-text">Extreme close-up macro photograph, crisp white papers sliding out of a sleek black self-service kiosk printer slot, Indian student hand reaching to collect papers, dark matte black machine body, single dramatic side lighting creating paper edge shadow, ultra-sharp focus on paper edges, high contrast, product photography style, portrait orientation --ar 3:4 --style raw</div>
+        <button class="cbtn" onclick="cp(this,'Extreme close-up macro photograph, crisp white papers sliding out of a sleek black self-service kiosk printer slot, Indian student hand reaching to collect papers, dark matte black machine body, single dramatic side lighting creating paper edge shadow, ultra-sharp focus on paper edges, high contrast, product photography style, portrait orientation --ar 3:4 --style raw')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">1200×1600px · Portrait · .jpg · 80% quality</div>
+    </div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">about3.jpg — Campus environment at dusk</div><div class="asset-file">/public/assets/images/about3.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography Direction</span>
+        <div class="prompt-text">
+          <b>Subject:</b> A wide shot of a college campus — the entrance gate, a corridor between buildings, or an academic block — shot at dusk or early evening (golden hour transitioning to blue hour). The PrintIT kiosk is visible in the mid-ground, glowing.<br><br>
+          <b>Composition:</b> Portrait orientation. The kiosk sits roughly 1/3 into the frame. Students are visible but blurred (long exposure or shallow depth of field) — they're in motion, not posed. The sky, if visible, should be deep blue (magic hour).<br><br>
+          <b>Lighting:</b> Natural blue-hour ambient light provides the background. The kiosk creates a warm orange/coral pool of light — the only warm element in an otherwise cool-toned scene. This contrast is crucial.<br><br>
+          <b>Mood:</b> Institutional scale. This kiosk belongs on this campus. It's a permanent fixture. "PrintIT is part of the infrastructure."
+        </div>
+        <button class="cbtn" onclick="cp(this,'Wide shot Indian college campus at blue hour/dusk, PrintIT kiosk glowing warm orange in mid-ground, students in motion blurred, deep blue sky, cool ambient vs warm kiosk light contrast, portrait orientation, architectural photography style')">Copy</button>
+      </div>
+      <div class="prompt-box" style="margin-top:6px">
+        <span class="plabel">AI Image Prompt</span>
+        <div class="prompt-text">Indian university campus exterior at blue hour dusk, sleek black self-service kiosk machine glowing warm orange light in corridor between modern academic buildings, students walking past blurred by slow shutter, deep blue sky, cool ambient light contrasts with single warm kiosk light source, architectural photography, ultra-realistic, portrait orientation --ar 3:4 --style raw</div>
+        <button class="cbtn" onclick="cp(this,'Indian university campus exterior at blue hour dusk, sleek black self-service kiosk machine glowing warm orange light in corridor between modern academic buildings, students walking past blurred by slow shutter, deep blue sky, cool ambient light contrasts with single warm kiosk light source, architectural photography, ultra-realistic, portrait orientation --ar 3:4 --style raw')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">1200×1600px · Portrait · .jpg · 80% quality</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODEL CARDS IMAGES -->
+<div class="card" id="card-models">
+  <div class="ch" onclick="tog('models')">
+    <div class="ico" style="background:#f0fdf4">🖼</div>
+    <div class="cm"><div class="cf">ImpactProjects.tsx → Models Cards — /public/assets/images/</div><div class="ct">Horizontal Scroll Cards — 3 Model Images</div></div>
+    <span class="cv" id="cv-models">▶</span>
+  </div>
+  <div class="cb" id="cb-models">
+    <span class="atag aphoto">Photography</span>
+    <div class="note">These are landscape images that appear in the horizontal-scroll cards section. Each card shows a business model. The image fills the top half of the card with a dark overlay — so they just need to convey the right mood, not have specific product detail.</div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">model-managed.jpg — Innvera team installing kiosk</div><div class="asset-file">/public/assets/images/model-managed.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography / AI Prompt</span>
+        <div class="prompt-text">
+          A technician or two-person team installing or setting up a sleek black self-service kiosk in a college corridor. One person works on the back panel (showing cables or mounting hardware), the other stands back reviewing a tablet or checklist. Both wear Innvera-branded polo shirts or dark workwear.<br><br>
+          <b>Mood:</b> Competent, professional, we-handle-everything. The word "managed" should feel implicit.<br><br>
+          <b>AI Prompt:</b> Two professional technicians in dark branded polo shirts installing a sleek black self-service kiosk machine in a modern university corridor, one working on cable connections at back of machine, one reviewing tablet, warm corridor lighting, photorealistic, editorial product photography, landscape orientation, slightly dark and moody --ar 16:9 --style raw
+        </div>
+        <button class="cbtn" onclick="cp(this,'Two professional technicians in dark branded polo shirts installing a sleek black self-service kiosk machine in a modern university corridor, one working on cable connections at back of machine, one reviewing tablet, warm corridor lighting, photorealistic, editorial product photography, landscape orientation --ar 16:9 --style raw')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">800×500px · Landscape · .jpg</div>
+    </div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">model-owned.jpg — College administrator with kiosk</div><div class="asset-file">/public/assets/images/model-owned.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography / AI Prompt</span>
+        <div class="prompt-text">
+          A confident college administrator (50s, male or female, professional attire — salwar/kurta or formal shirt) stands next to the PrintIT kiosk with arms folded or hands clasped in front. They're looking slightly off-camera or directly at camera with a slight nod of satisfaction. The kiosk screen is visible to their right. Shot in a well-lit office corridor or college reception area.<br><br>
+          <b>Mood:</b> Ownership. Authority. "This is ours." High confidence.<br><br>
+          <b>AI Prompt:</b> Indian college administrator, 50s, professional formal attire, standing confidently next to sleek black self-service PrintIT kiosk in modern university corridor, arms folded, slight smile, professional DSLR portrait photography, well-lit office environment, landscape orientation --ar 16:9
+        </div>
+        <button class="cbtn" onclick="cp(this,'Indian college administrator, 50s, professional formal attire, standing confidently next to sleek black self-service kiosk in modern university corridor, arms folded, slight smile, professional DSLR portrait photography, well-lit office environment, landscape orientation --ar 16:9')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">800×500px · Landscape · .jpg</div>
+    </div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">stats-bg.jpg — Abstract dark campus texture</div><div class="asset-file">/public/assets/images/stats-bg.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">AI Prompt (simple — this is just a texture behind numbers)</span>
+        <div class="prompt-text">Dark abstract minimal photograph, extreme close-up of stacked printed white paper sheets, slightly blurred, very dark low-key lighting, only subtle paper edge details visible, black and dark grey tones, minimal texture, no people, no text, landscape orientation --ar 16:9 --style raw</div>
+        <button class="cbtn" onclick="cp(this,'Dark abstract minimal photograph, extreme close-up of stacked printed white paper sheets, slightly blurred, very dark low-key lighting, only subtle paper edge details visible, black and dark grey tones, minimal texture, no people, no text, landscape orientation --ar 16:9 --style raw')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">800×500px · Landscape · .jpg · can be very dark, almost black</div>
+    </div>
+  </div>
+</div>
+
+<!-- PODCAST/CTA SECTION -->
+<div class="card" id="card-cta">
+  <div class="ch" onclick="tog('cta')">
+    <div class="ico" style="background:#fdf4ff">📞</div>
+    <div class="cm"><div class="cf">PodcastSection.tsx (→ Contact CTA) — /public/assets/images/</div><div class="ct">Contact / CTA Section Background</div></div>
+    <span class="cv" id="cv-cta">▶</span>
+  </div>
+  <div class="cb" id="cb-cta">
+    <span class="atag aphoto">Photography</span>
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">cta-bg.jpg — Busy campus energy shot</div><div class="asset-file">/public/assets/images/cta-bg.jpg</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography Direction</span>
+        <div class="prompt-text">
+          A wide shot of a crowded, energetic campus environment — canteen, open corridor, or campus entrance — at peak activity time (after lectures, lunch break). The shot is deliberately busy: many students moving, talking, crossing paths. Shot with a slightly longer shutter speed (1/30s–1/60s) to create light motion blur in the crowd, giving it a kinetic energy feel.<br><br>
+          This image will have a heavy dark overlay on top (the two CTA cards sit over it), so the actual content doesn't matter — the energy and busyness does. Even a blurred, grainy shot works perfectly here.<br><br>
+          <b>AI Prompt:</b> Busy Indian university campus crowd, hundreds of students walking through wide outdoor corridor between buildings, motion blur from slow shutter, aerial or elevated perspective, cinematic energy, warm afternoon sunlight, chaotic beautiful movement, photorealistic --ar 16:9
+        </div>
+        <button class="cbtn" onclick="cp(this,'Busy Indian university campus crowd, hundreds of students walking through wide outdoor corridor between buildings, motion blur from slow shutter, aerial or elevated perspective, cinematic energy, warm afternoon sunlight, chaotic beautiful movement, photorealistic --ar 16:9')">Copy AI prompt</button>
+      </div>
+      <div class="asset-spec">1920×1080px · Landscape · .jpg · compressed under 400KB</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER TEXTURE -->
+<div class="card" id="card-tex">
+  <div class="ch" onclick="tog('tex')">
+    <div class="ico" style="background:#f0fdf4">🌫</div>
+    <div class="cm"><div class="cf">Footer.tsx — /public/assets/images/</div><div class="ct">Grain / Noise Texture Overlays</div></div>
+    <span class="cv" id="cv-tex">▶</span>
+  </div>
+  <div class="cb" id="cb-tex">
+    <span class="atag asvg">Generated Asset</span>
+    <div class="note">These are semi-transparent PNG textures overlaid at low opacity on the footer and about section. They add film grain and premium tactility. No photography needed — generate these free online.</div>
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">🔲</div><div><div class="asset-name">texture.png + texture-footer.png</div><div class="asset-file">/public/assets/images/texture.png</div></div></div>
+      <div class="tech">
+        <b>How to generate:</b> Go to grainy.design or noise.texture.garden (free tools) → set grain size to "Fine" → export as PNG with transparency → resize to 512×512px. The existing textures in the repo are already correct. Only replace if you want a specific grain style. Current usage: opacity 0.05 over sections and opacity 0.2 in footer with mix-blend-overlay.
+      </div>
+      <div class="asset-spec">512×512px · PNG with alpha transparency · tileable</div>
+    </div>
+  </div>
+</div>
+
+<!-- KIOSK PRODUCT SHOTS -->
+<div class="card" id="card-kiosk">
+  <div class="ch" onclick="tog('kiosk')">
+    <div class="ico" style="background:#fff7ed">🖨</div>
+    <div class="cm"><div class="cf">All pages — future use + marketing</div><div class="ct">Kiosk Product Photography — Core Marketing Asset</div></div>
+    <span class="cv" id="cv-kiosk">▶</span>
+  </div>
+  <div class="cb" id="cb-kiosk">
+    <span class="atag aphoto">Photography</span>
+    <div class="note">These aren't used on the site yet but you'll need them immediately for proposals, brochures, LinkedIn, and future website sections. Shoot these the moment your kiosk is ready. One good product shoot session gives you assets for 2 years.</div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">kiosk-hero.jpg — Clean product shot, studio style</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography Direction — set up this shot yourself</span>
+        <div class="prompt-text">
+          <b>Setup:</b> Place the kiosk against a pure black backdrop (black fabric or a dark wall in a dark room). Use two lights: one key light from 45° left (creates the primary shape and highlights the kiosk edges), one rim light from behind-right (separates the kiosk from the background with a bright edge). No fill light — keep shadows deep.<br><br>
+          <b>Shot:</b> 3/4 angle view of the full kiosk — the screen should be ON and showing the PrintIT UI (app home screen). The printer slot and output tray should be visible. Eye-level height. Kiosk centered in frame with breathing room on all sides.<br><br>
+          <b>The screen matters:</b> Show the actual PrintIT app home screen on the kiosk display. Use a long exposure or composite if needed to make the screen visible without blowout.<br><br>
+          <b>Result:</b> A crisp, dramatic product shot that could appear in a tech magazine. This is your most reusable marketing asset.
+        </div>
+        <button class="cbtn" onclick="cp(this,'PrintIT kiosk 3/4 angle, black backdrop, two-light setup: key 45 degree left, rim light behind-right, screen showing PrintIT app UI, printer slot visible, eye-level, full kiosk in frame with breathing room, dark dramatic product photography')">Copy</button>
+      </div>
+      <div class="asset-spec">4000×5000px · Portrait · .jpg RAW · professional studio lighting</div>
+    </div>
+
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">📷</div><div><div class="asset-name">kiosk-screen-close.jpg — Screen detail shot</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Photography Direction</span>
+        <div class="prompt-text">
+          Extreme close-up of just the kiosk screen showing the PrintIT app interface. Shoot from exactly straight-on (no parallax distortion). The screen should show the main print order screen — document name, settings, pay button. Frame tightly: 10% black bezel visible on all sides, 80% screen. This is used for app store screenshots, proposal documents, and print materials.
+        </div>
+        <button class="cbtn" onclick="cp(this,'Extreme close-up straight-on shot of PrintIT kiosk touchscreen showing print order app interface, 10% black bezel border, 80% screen, no parallax, high resolution for proposals and marketing')">Copy</button>
+      </div>
+      <div class="asset-spec">3000×3000px · Square · .jpg RAW</div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGO / BRAND -->
+<div class="card" id="card-brand">
+  <div class="ch" onclick="tog('brand')">
+    <div class="ico" style="background:#ede9fe">✏️</div>
+    <div class="cm"><div class="cf">Header.tsx + all pages</div><div class="ct">Logomark — SVG Icon (Optional but Recommended)</div></div>
+    <span class="cv" id="cv-brand">▶</span>
+  </div>
+  <div class="cb" id="cb-brand">
+    <span class="atag asvg">SVG / Brand Design</span>
+    <div class="note">The current header uses text only. Adding a small logomark (icon) next to "Innvera" would make the site look more established. This is optional but adds significant perceived professionalism.</div>
+    <div class="asset">
+      <div class="asset-head"><div class="asset-ico">⬡</div><div><div class="asset-name">logo-mark.svg — Abstract kiosk/I mark</div></div></div>
+      <div class="prompt-box">
+        <span class="plabel">Design Brief for a designer or AI (Figma / Adobe Illustrator)</span>
+        <div class="prompt-text">
+          Design a minimal geometric logomark for Innvera Technology / PrintIT. The mark should work at 28×28px and at 200×200px equally well.<br><br>
+          <b>Concept direction A (Recommended):</b> An abstract letterform "I" that is composed of two overlapping rectangles at a slight angle — evoking both the letter I and a printed sheet of paper sliding out of a machine. Monochrome. Works in white on black (website) and black on white (proposals).<br><br>
+          <b>Concept direction B:</b> A minimal kiosk silhouette — a tall rectangle with a smaller screen rectangle and a horizontal slot line at the bottom. Reduced to 3–4 geometric shapes total.<br><br>
+          <b>Style rules:</b> No gradients. No rounded corners (matches the site's 0px border-radius). Pure geometric. Weight similar to a medium-bold font stroke. Clean enough to embroider on a polo shirt.
+        </div>
+        <button class="cbtn" onclick="cp(this,'Minimal geometric logomark for Innvera Technology PrintIT. Concept: abstract letterform I composed of two overlapping rectangles at slight angle evoking printed paper. Monochrome. Works at 28px and 200px. No gradients, no rounded corners, pure geometric, stroke weight like medium-bold font.')">Copy brief</button>
+      </div>
+      <div class="asset-spec">SVG vector · 28×28 artboard · single path or 2–3 shapes max · monochrome</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function tog(id){
+  const cb=document.getElementById('cb-'+id),cv=document.getElementById('cv-'+id),ch=cb.previousElementSibling;
+  const o=cb.classList.toggle('open');
+  cv.classList.toggle('o',o);
+  cv.textContent=o?'▼':'▶';
+  ch.classList.toggle('open',o);
+}
+function cp(btn,t){
+  navigator.clipboard.writeText(t).then(()=>{
+    btn.textContent='Copied!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},1800);
+  });
+}
+tog('hero');
+</script>

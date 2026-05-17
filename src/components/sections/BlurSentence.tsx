@@ -13,7 +13,7 @@ const BlurSentence = () => {
 
   const x = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"]);
 
-  const sentence = "Change begins where we're not looking.";
+  const sentence = "Print smarter. Study harder. Available 24/7.";
 
   return (
     <section
